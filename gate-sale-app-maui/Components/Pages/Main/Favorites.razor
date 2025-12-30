@@ -1,0 +1,316 @@
+@page "/favorites"
+@inject NavigationManager Navigation
+@inject FavoriteService FavoriteService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services
+
+<div class="favorites-container">
+    <!-- Header -->
+    <div class="header-section">
+        <h1 class="page-title">Saved Items</h1>
+        <p class="subtitle">@favoriteItems.Count items saved</p>
+    </div>
+
+    <!-- Favorites List -->
+    <div class="favorites-content">
+        @if (favoriteItems.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z" fill="#E5E7EB"/>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No saved items yet</h3>
+                <p class="empty-description">Items you save will appear here</p>
+                <button class="browse-btn" @onclick="GoToMarketplace">Browse Items</button>
+            </div>
+        }
+        else
+        {
+            <div class="favorites-list">
+                @foreach (var item in favoriteItems)
+                {
+                    <div class="favorite-item">
+                        <div class="item-image">
+                            <img src="@item.ImageUrl" alt="@item.Title" class="product-image" />
+                        </div>
+                        <div class="item-info">
+                            <h3 class="item-title">@item.Title</h3>
+                            <div class="item-tags">
+                                @if (item.IsVerified)
+                                {
+                                    <span class="tag verified">Verified</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Rating))
+                                {
+                                    <span class="rating-tag">@item.Rating</span>
+                                }
+                            </div>
+                            <p class="item-price">@item.Price</p>
+                            <p class="item-details">@item.Details</p>
+                            <div class="item-actions">
+                                <button class="message-btn">Message</button>
+                                <button class="offer-btn">Offer</button>
+                            </div>
+                        </div>
+                        <div class="favorite-button active" @onclick="() => RemoveFromFavorites(item.Id)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z" fill="#EF4444"/>
+                            </svg>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+</div>
+
+<style>
+    .favorites-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FFFFFF;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        padding-bottom: 80px;
+        box-sizing: border-box;
+    }
+
+    .header-section {
+        padding: 20px;
+        background: white;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #000000;
+        margin: 0 0 4px 0;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .favorites-content {
+        flex: 1;
+        padding: 20px;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-description {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0 0 24px 0;
+    }
+
+    .browse-btn {
+        background: #00BFFF;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    
+
+    .favorites-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .favorite-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    .item-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #F9FAFB;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .item-info {
+        flex: 1;
+    }
+
+    .item-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0 0 8px 0;
+    }
+
+    .item-tags {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .tag {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .tag.verified {
+        background: #DCFCE7;
+        color: #16A34A;
+    }
+
+    .rating-tag {
+        background: #FEF3C7;
+        color: #D97706;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .item-price {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0 0 4px 0;
+    }
+
+    .item-details {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0 0 12px 0;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .message-btn, .offer-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .message-btn {
+        background: #F3F4F6;
+        color: #374151;
+    }
+
+    .message-btn:hover {
+        background: #E5E7EB;
+    }
+
+    .offer-btn {
+        background: #00BFFF;
+        color: white;
+    }
+
+    
+
+    .favorite-button {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .favorite-button:hover {
+        transform: scale(1.1);
+    }
+
+    .favorite-button.active svg {
+        fill: #EF4444;
+    }
+
+</style>
+
+@code {
+    private List<FavoriteItem> favoriteItems = new();
+
+    protected override void OnInitialized()
+    {
+        favoriteItems = FavoriteService.GetFavorites();
+        FavoriteService.OnFavoritesChanged += RefreshFavorites;
+    }
+
+    private void RefreshFavorites()
+    {
+        favoriteItems = FavoriteService.GetFavorites();
+        StateHasChanged();
+    }
+
+    private void RemoveFromFavorites(string itemId)
+    {
+        FavoriteService.RemoveFromFavorites(itemId);
+    }
+
+    private void GoToMarketplace()
+    {
+        TransitionService.RequestTransition("/home2", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+
+    public void Dispose()
+    {
+        FavoriteService.OnFavoritesChanged -= RefreshFavorites;
+    }
+}

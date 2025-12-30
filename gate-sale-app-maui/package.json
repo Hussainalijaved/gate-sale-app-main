@@ -1,0 +1,11 @@
+{
+  "name": "gatesale",
+  "version": "1.0.0",
+  "description": "GateSale mobile app",
+  "scripts": {
+    "build-css": "tailwindcss -i ./wwwroot/css/input.css -o ./wwwroot/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

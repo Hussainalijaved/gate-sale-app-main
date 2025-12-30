@@ -1,0 +1,554 @@
+@page "/settings"
+@inject NavigationManager Navigation
+@inject IUserService UserService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Collections.Generic
+
+<div class="settings-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Settings</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- User Profile Header -->
+    <div class="user-profile-header">
+        <div class="user-initials">
+            EJ
+        </div>
+        <div class="user-info">
+            <h2 class="user-name">Emma Johnson</h2>
+            <p class="user-email">emma.johnson@email.com</p>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Account Section -->
+        <div class="settings-section">
+            <h2 class="section-title">Account</h2>
+            <div class="settings-group">
+                <div class="setting-item" @onclick="EditProfile">
+                    <div class="setting-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="7" r="4" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">Edit Profile</h3>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+
+                <div class="setting-item" @onclick="ManagePayment">
+                    <div class="setting-icon green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="5" width="20" height="14" rx="2" stroke="#10B981" stroke-width="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="#10B981" stroke-width="2"/>
+                            <circle cx="17" cy="15" r="1" stroke="#10B981" stroke-width="1.5"/>
+                            <circle cx="13" cy="15" r="1" stroke="#10B981" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">Payment Methods</h3>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences Section -->
+        <div class="settings-section">
+            <h2 class="section-title">Preferences</h2>
+            <div class="settings-group">
+                <div class="setting-item toggle-item">
+                    <div class="setting-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">Notifications</h3>
+                    </div>
+                    <div class="toggle-switch @(pushNotifications ? "active" : "")" @onclick="TogglePushNotifications">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item" @onclick="ViewAbout">
+                    <div class="setting-icon gray">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="#6B7280" stroke-width="2"/>
+                            <path d="M12 16V12" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 8H12.01" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">About</h3>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" @onclick="ViewTerms">
+                    <div class="setting-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M15 3H6C5.46957 3 4.96086 3.21071 4.58579 3.58579C4.21071 3.96086 4 4.46957 4 5V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V8L15 3Z" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="15,3 15,8 20,8" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">Terms of Service</h3>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+                
+                <div class="setting-item" @onclick="ViewPrivacyPolicy">
+                    <div class="setting-icon indigo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#6366F1" stroke-width="2"/>
+                            <path d="M9 12L11 14L15 10" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="setting-content">
+                        <h3 class="setting-title">Privacy Policy</h3>
+                    </div>
+                    <div class="setting-arrow">›</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Out Button -->
+        <div class="sign-out-container">
+            <button class="sign-out-button" @onclick="LogOut">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="16,17 21,12 16,7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="21" y1="12" x2="9" y2="12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Sign Out
+            </button>
+        </div>
+        
+        <div class="version-info">
+            Version 0.1
+        </div>
+    </div>
+</div>
+
+<style>
+    .settings-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+        background-color: white;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+    
+    .user-profile-header {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(to right, #3ABEF9, #4ADE80);
+    }
+    
+    .user-initials {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        margin-right: 12px;
+    }
+    
+    .user-info {
+        flex: 1;
+    }
+    
+    .user-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        margin: 0;
+    }
+    
+    .user-email {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #F9FAFB;
+    }
+
+    .settings-section {
+        margin-bottom: 32px;
+    }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 12px 0;
+        padding: 0 4px;
+    }
+
+    .settings-group {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #F3F4F6;
+        margin-bottom: 24px;
+    }
+
+    .setting-item {
+        display: flex;
+        align-items: center;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-item:hover {
+        background-color: #F9FAFB;
+    }
+
+    .danger-item:hover {
+        background-color: #FEF2F2;
+    }
+
+    .setting-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 14px;
+        flex-shrink: 0;
+    }
+
+    .setting-icon.blue {
+        background-color: #EFF6FF;
+    }
+
+    .setting-icon.green {
+        background-color: #F0FDF4;
+    }
+
+    .setting-icon.purple {
+        background-color: #FAF5FF;
+    }
+
+    .setting-icon.orange {
+        background-color: #FFFBEB;
+    }
+
+    .setting-icon.red {
+        background-color: #FEF2F2;
+    }
+
+    .setting-icon.teal {
+        background-color: #F0FDFA;
+    }
+
+    .setting-icon.indigo {
+        background-color: #EEF2FF;
+    }
+
+    .setting-icon.gray {
+        background-color: #F9FAFB;
+    }
+
+    .setting-icon.yellow {
+        background-color: #FFFBEB;
+    }
+
+    .setting-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .setting-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #111827;
+        margin: 0;
+    }
+
+    .setting-subtitle {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .setting-arrow {
+        font-size: 18px;
+        color: #9CA3AF;
+        font-weight: 300;
+    }
+
+    .toggle-item {
+        cursor: pointer;
+    }
+
+    .toggle-switch {
+        width: 44px;
+        height: 24px;
+        background-color: #E5E7EB;
+        border-radius: 12px;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .toggle-switch.active {
+        background-color: #3ABEF9;
+    }
+
+    .toggle-slider {
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .toggle-switch.active .toggle-slider {
+        transform: translateX(20px);
+    }
+    
+    .sign-out-container {
+        padding: 0 20px;
+        margin-top: 24px;
+        margin-bottom: 16px;
+    }
+    
+    .sign-out-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        background-color: #FF5A4A;
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .sign-out-button:hover {
+        background-color: #E03E43;
+    }
+    
+    .version-info {
+        text-align: center;
+        font-size: 10px;
+        color: #9CA3AF;
+        margin-top: 16px;
+        margin-bottom: 20px;
+    }
+</style>
+
+@code {
+    // Notification settings
+    private bool pushNotifications = true;
+    private bool emailNotifications = true;
+    private bool smsNotifications = false;
+    private bool orderUpdates = true;
+
+    // Privacy settings
+    private bool dataAnalytics = true;
+
+    // App preferences
+    private bool darkMode = false;
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    // Profile Actions
+    private void EditProfile()
+    {
+        TransitionService.RequestTransition("/edit-profile", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ManagePayment()
+    {
+        TransitionService.RequestTransition("/payment-methods", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    // Notification Toggles
+    private void TogglePushNotifications()
+    {
+        pushNotifications = !pushNotifications;
+        StateHasChanged();
+        // TODO: Save to user preferences
+    }
+
+    private void ToggleEmailNotifications()
+    {
+        emailNotifications = !emailNotifications;
+        StateHasChanged();
+        // TODO: Save to user preferences
+    }
+
+    private void ToggleSmsNotifications()
+    {
+        smsNotifications = !smsNotifications;
+        StateHasChanged();
+        // TODO: Save to user preferences
+    }
+
+    private void ToggleOrderUpdates()
+    {
+        orderUpdates = !orderUpdates;
+        StateHasChanged();
+        // TODO: Save to user preferences
+    }
+
+    // Privacy Actions
+    private void ManagePrivacy()
+    {
+        TransitionService.RequestTransition("/privacy-settings", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ToggleDataAnalytics()
+    {
+        dataAnalytics = !dataAnalytics;
+        StateHasChanged();
+        // TODO: Save to user preferences
+    }
+
+    private void ViewDataPolicy()
+    {
+        TransitionService.RequestTransition("/data-policy", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    // App Preference Actions
+    private void ChangeLanguage()
+    {
+        TransitionService.RequestTransition("/language-settings", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ToggleDarkMode()
+    {
+        darkMode = !darkMode;
+        StateHasChanged();
+        // TODO: Apply dark mode theme
+    }
+
+    private void ManageCurrency()
+    {
+        TransitionService.RequestTransition("/currency-settings", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    // Support Actions
+    private void ContactSupport()
+    {
+        TransitionService.RequestTransition("/contact-support", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ViewFAQ()
+    {
+        TransitionService.RequestTransition("/faq", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ViewAbout()
+    {
+        TransitionService.RequestTransition("/about", GateSale.Services.TransitionType.SlideLeft);
+    }
+    
+    private void ViewTerms()
+    {
+        TransitionService.RequestTransition("/terms", GateSale.Services.TransitionType.SlideLeft);
+    }
+    
+    private void ViewPrivacyPolicy()
+    {
+        TransitionService.RequestTransition("/privacy-policy", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    // Account Actions
+    private void LogOut()
+    {
+        // TODO: Show confirmation dialog
+        // Clear user session and navigate to login
+        TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.Fade);
+    }
+}

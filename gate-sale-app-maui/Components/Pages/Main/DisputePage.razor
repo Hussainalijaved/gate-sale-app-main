@@ -1,0 +1,660 @@
+@page "/dispute/{orderId}"
+@inject IDisputeService DisputeService
+@inject IOrderService OrderService
+@inject IUserService UserService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Models
+@using GateSale.Services.Interfaces
+@using Microsoft.Maui.Storage
+
+<div class="dispute-page-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Dispute Management</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading dispute details...</p>
+            </div>
+        }
+        else if (dispute == null && isBuyer)
+        {
+            <!-- Create Dispute Form (Buyer only) -->
+            <div class="create-dispute-section">
+                <div class="info-card">
+                    <h3>Initiate a Dispute</h3>
+                    <p>Please select a reason and provide details about the issue with your order.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason</label>
+                    <select class="form-select" @bind="newDispute.ReasonCode">
+                        @foreach (var reason in Enum.GetValues<DisputeReason>())
+                        {
+                            <option value="@reason">@reason.ToString().Replace("Item", "Item ")</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Brief Reason</label>
+                    <input type="text" class="form-input" placeholder="e.g. Screen is cracked" @bind="newDispute.Reason" />
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Description</label>
+                    <textarea class="form-textarea" rows="4" placeholder="Describe the issue in detail..." @bind="newDispute.Description"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Evidence Photos (Optional)</label>
+                    <div class="photo-upload-grid">
+                        @foreach (var file in selectedFiles)
+                        {
+                            <div class="selected-photo">
+                                <div class="photo-placeholder">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx='12' cy='13' r='4'/>
+                                    </svg>
+                                </div>
+                                <button class="remove-photo" @onclick="() => RemoveSelectedFile(file)">×</button>
+                                <span class="file-name">@file.FileName</span>
+                            </div>
+                        }
+                        <button class="add-photo-btn" @onclick="PickInitialPhotos">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            <span>Add Photo</span>
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">@errorMessage</div>
+                }
+
+                <button class="btn-primary" @onclick="SubmitDispute" disabled="@isProcessing">
+                    @if (isProcessing) { <span class="spinner-small"></span> }
+                    Submit Dispute
+                </button>
+            </div>
+        }
+        else if (dispute == null && !isBuyer)
+        {
+            <div class="empty-state">
+                <p>No dispute has been opened for this order yet.</p>
+                <button class="btn-outline" @onclick="GoBack">Go Back</button>
+            </div>
+        }
+        else
+        {
+            <!-- Dispute Status View -->
+            <div class="dispute-status-section">
+                <div class="status-card @dispute.Status.ToString().ToLower()">
+                    <div class="status-header">
+                        <span class="status-label">Status: @dispute.Status</span>
+                        <span class="date-label">@dispute.CreatedAt.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <h3 class="dispute-reason">@dispute.Reason</h3>
+                    <p class="dispute-desc">@dispute.Description</p>
+                </div>
+
+                <!-- Admin Review Section -->
+                @if (dispute.Status == DisputeStatus.Approved || dispute.Status == DisputeStatus.Rejected)
+                {
+                    <div class="review-card @(dispute.IsApproved == true ? "approved" : "rejected")">
+                        <h4>Admin Review</h4>
+                        <p>@dispute.AdminNotes</p>
+                        <span class="review-date">Reviewed on @dispute.ReviewedAt?.ToString("MMM dd, yyyy")</span>
+                    </div>
+                }
+
+                <!-- Evidence Section -->
+                <div class="evidence-section">
+                    <div class="section-header">
+                        <h3>Evidence</h3>
+                        @if (isBuyer && dispute.Status == DisputeStatus.Open)
+                        {
+                            <button class="btn-text" @onclick="TriggerFileUpload" disabled="@isProcessing">
+                                @if (isProcessing) { <span class="spinner-small"></span> }
+                                else { <span>Add Photo</span> }
+                            </button>
+                        }
+                    </div>
+                    
+                    @if (dispute.Evidence.Count == 0)
+                    {
+                        <p class="empty-text">No evidence uploaded yet.</p>
+                    }
+                    else
+                    {
+                        <div class="evidence-grid">
+                            @foreach (var item in dispute.Evidence)
+                            {
+                                <div class="evidence-item">
+                                    <img src="@item.FileUrl" alt="Evidence" />
+                                    @if (!string.IsNullOrEmpty(item.Caption))
+                                    {
+                                        <span class="caption">@item.Caption</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Seller Actions -->
+                @if (isSeller && dispute.Status == DisputeStatus.Approved && !dispute.IsReturnRequested && !dispute.IsReturnCompleted)
+                {
+                    <div class="seller-actions-card">
+                        <h3>Resolve Dispute</h3>
+                        <p>The dispute has been approved. Please choose how to proceed.</p>
+                        <div class="action-buttons">
+                            <button class="btn-outline" @onclick="() => RequestReturn(false)" disabled="@isProcessing">Request Return (Buyer Pays)</button>
+                            <button class="btn-outline" @onclick="() => RequestReturn(true)" disabled="@isProcessing">Request Return (I Pay)</button>
+                            <button class="btn-danger-fill" @onclick="WaiveReturn" disabled="@isProcessing">Waive Return & Refund</button>
+                        </div>
+                    </div>
+                }
+
+                <!-- Return Status -->
+                @if (dispute.IsReturnRequested)
+                {
+                    <div class="return-status-card">
+                        <h3>Return in Progress</h3>
+                        <p>@(dispute.IsReturnPaidBySeller ? "Seller is paying for return shipping." : "Buyer is paying for return shipping.")</p>
+                        @if (dispute.IsReturnCompleted)
+                        {
+                            <div class="success-badge">Return Completed</div>
+                        }
+                        else if (isBuyer && !dispute.IsReturnCompleted)
+                        {
+                            <button class="btn-primary" @onclick="MarkShipped" disabled="@isProcessing">Mark as Shipped</button>
+                        }
+                        else if (isSeller && !dispute.IsReturnCompleted)
+                        {
+                            <button class="btn-primary" @onclick="MarkCollected" disabled="@isProcessing">Confirm Collection</button>
+                        }
+                    </div>
+                }
+
+                <!-- Test Buttons -->
+                <div class="test-actions mt-24">
+                    <p class="test-label">Developer Test Actions:</p>
+                    <div class="test-grid">
+                        @if (dispute.Status == DisputeStatus.Open)
+                        {
+                            <button class="btn-test" @onclick="() => TestReviewDispute(true)">Approve Dispute</button>
+                            <button class="btn-test" @onclick="() => TestReviewDispute(false)">Reject Dispute</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .dispute-page-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #F9FAFB;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: white;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .header-spacer { width: 40px; }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .info-card {
+        background-color: #DBEAFE;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .info-card h3 { margin: 0 0 8px 0; font-size: 16px; color: #1E40AF; }
+    .info-card p { margin: 0; font-size: 14px; color: #1E40AF; opacity: 0.8; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151; }
+    
+    .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 14px;
+        background-color: white;
+    }
+
+    .btn-primary {
+        width: 100%;
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .status-card {
+        background-color: white;
+        padding: 16px;
+        border-radius: 12px;
+        border-left: 4px solid #3ABEF9;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+
+    .status-card.open { border-left-color: #3ABEF9; }
+    .status-card.approved { border-left-color: #10B981; }
+    .status-card.rejected { border-left-color: #EF4444; }
+
+    .status-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .status-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6B7280; }
+    .date-label { font-size: 12px; color: #9CA3AF; }
+    .dispute-reason { margin: 0 0 8px 0; font-size: 18px; font-weight: 700; }
+    .dispute-desc { margin: 0; font-size: 14px; color: #4B5563; line-height: 1.5; }
+
+    .review-card {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    .review-card.approved { background-color: #ECFDF5; border: 1px solid #10B981; }
+    .review-card.rejected { background-color: #FEF2F2; border: 1px solid #EF4444; }
+    .review-card h4 { margin: 0 0 8px 0; font-size: 14px; }
+    .review-card p { margin: 0 0 8px 0; font-size: 14px; }
+    .review-date { font-size: 12px; color: #6B7280; }
+
+    .evidence-section { margin-bottom: 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-header h3 { margin: 0; font-size: 16px; }
+    .btn-text { background: none; border: none; color: #3ABEF9; font-weight: 600; cursor: pointer; }
+
+    .evidence-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .evidence-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background-color: #E5E7EB; }
+    .evidence-item img { width: 100%; height: 100%; object-fit: cover; }
+    .caption { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 2px 4px; text-align: center; }
+
+    .seller-actions-card {
+        background-color: white;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .action-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .btn-outline { background: none; border: 1px solid #3ABEF9; color: #3ABEF9; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-danger-fill { background-color: #EF4444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+    .return-status-card { background-color: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; }
+    .success-badge { background-color: #10B981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; display: inline-block; margin-top: 8px; }
+
+    .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid #E5E7EB; border-top-color: #3ABEF9; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+    .error-message { color: #EF4444; font-size: 14px; margin-bottom: 12px; }
+    .empty-state { text-align: center; padding: 40px 20px; }
+    .empty-state p { color: #6B7280; margin-bottom: 20px; }
+
+    .spinner-small { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+    
+    /* Photo Upload Styles */
+    .photo-upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+    .selected-photo { position: relative; aspect-ratio: 1; background-color: #F3F4F6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; border: 1px solid #E5E7EB; }
+    .photo-placeholder { color: #9CA3AF; margin-bottom: 4px; }
+    .file-name { font-size: 8px; color: #6B7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+    .remove-photo { position: absolute; top: -5px; right: -5px; background: #EF4444; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .add-photo-btn { aspect-ratio: 1; border: 2px dashed #D1D5DB; border-radius: 8px; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #6B7280; cursor: pointer; transition: all 0.2s; }
+    .add-photo-btn:hover { border-color: #3ABEF9; color: #3ABEF9; background-color: #F0F9FF; }
+    .add-photo-btn span { font-size: 10px; font-weight: 600; margin-top: 4px; }
+
+    /* Test Styles */
+    .test-actions {
+        padding: 12px;
+        background-color: #F3F4F6;
+        border: 1px dashed #D1D5DB;
+        border-radius: 12px;
+        margin-top: 24px;
+    }
+    .test-label { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 8px; }
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-test { background-color: #4B5563; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-test:hover { background-color: #374151; }
+
+    @@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+@code {
+    [Parameter] public string OrderId { get; set; } = string.Empty;
+
+    private DisputeDetailDto? dispute;
+    private CreateDisputeRequest newDispute = new();
+    private List<FileResult> selectedFiles = new();
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string errorMessage = "";
+    private bool isBuyer = false;
+    private bool isSeller = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                // Fetch Order Details for role detection
+                var order = await OrderService.GetOrderByIdAsync(guid);
+                if (order != null)
+                {
+                    var currentUser = await UserService.GetCurrentUserAsync();
+                    if (currentUser != null)
+                    {
+                        // In a real app, we'd compare IDs. For now, we'll check if the user is the seller.
+                        var sellerOrders = await OrderService.GetSellerOrdersAsync();
+                        isSeller = sellerOrders.Any(o => o.Id == guid);
+                        isBuyer = !isSeller;
+                    }
+                }
+
+                // Fetch existing dispute
+                dispute = await DisputeService.GetDisputeByOrderIdAsync(guid);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load data.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SubmitDispute()
+    {
+        if (string.IsNullOrWhiteSpace(newDispute.Reason))
+        {
+            errorMessage = "Please provide a brief reason.";
+            return;
+        }
+
+        try
+        {
+            isProcessing = true;
+            errorMessage = "";
+            
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                var result = await DisputeService.CreateDisputeAsync(guid, newDispute);
+                if (result != null)
+                {
+                    dispute = result;
+                    
+                    // Upload selected photos
+                    if (selectedFiles.Any())
+                    {
+                        foreach (var file in selectedFiles)
+                        {
+                            try
+                            {
+                                using var stream = await file.OpenReadAsync();
+                                using var memoryStream = new MemoryStream();
+                                await stream.CopyToAsync(memoryStream);
+                                
+                                await DisputeService.UploadEvidenceAsync(
+                                    dispute.Id, 
+                                    memoryStream.ToArray(), 
+                                    file.FileName, 
+                                    file.ContentType, 
+                                    "Initial Evidence");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error uploading initial photo: {ex.Message}");
+                            }
+                        }
+                        // Refresh to show evidence
+                        await LoadData();
+                    }
+                }
+                else
+                {
+                    errorMessage = "Failed to create dispute. Please try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task PickInitialPhotos()
+    {
+        try
+        {
+            var results = await FilePicker.Default.PickMultipleAsync(new PickOptions
+            {
+                PickerTitle = "Select Evidence Photos",
+                FileTypes = FilePickerFileType.Images
+            });
+
+            if (results != null)
+            {
+                foreach (var result in results)
+                {
+                    if (!selectedFiles.Any(f => f.FullPath == result.FullPath))
+                    {
+                        selectedFiles.Add(result);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error picking photos: {ex.Message}";
+        }
+    }
+
+    private void RemoveSelectedFile(FileResult file)
+    {
+        selectedFiles.Remove(file);
+    }
+
+    private async Task TriggerFileUpload()
+    {
+        try
+        {
+            var result = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Select Evidence Photo",
+                FileTypes = FilePickerFileType.Images
+            });
+
+            if (result != null)
+            {
+                isProcessing = true;
+                using var stream = await result.OpenReadAsync();
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                
+                var success = await DisputeService.UploadEvidenceAsync(
+                    dispute!.Id, 
+                    memoryStream.ToArray(), 
+                    result.FileName, 
+                    result.ContentType, 
+                    "Evidence Photo");
+
+                if (success)
+                {
+                    await LoadData(); // Refresh to show new evidence
+                }
+                else
+                {
+                    errorMessage = "Failed to upload evidence.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Upload Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task RequestReturn(bool sellerPays)
+    {
+        try
+        {
+            isProcessing = true;
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                var success = await DisputeService.RequestReturnAsync(guid, sellerPays);
+                if (success) await LoadData();
+                else errorMessage = "Failed to request return.";
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task WaiveReturn()
+    {
+        try
+        {
+            isProcessing = true;
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                var success = await DisputeService.WaiveReturnAsync(guid);
+                if (success) await LoadData();
+                else errorMessage = "Failed to waive return.";
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task MarkShipped()
+    {
+        try
+        {
+            isProcessing = true;
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                // In a real app, show a dialog for tracking number
+                var success = await DisputeService.MarkReturnShippedAsync(guid, "RET-" + Guid.NewGuid().ToString().Substring(0, 8), "Pudo Locker");
+                if (success) await LoadData();
+                else errorMessage = "Failed to mark as shipped.";
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task MarkCollected()
+    {
+        try
+        {
+            isProcessing = true;
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                var success = await DisputeService.MarkReturnCollectedAsync(guid);
+                if (success) await LoadData();
+                else errorMessage = "Failed to confirm collection.";
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task TestReviewDispute(bool isApproved)
+    {
+        try
+        {
+            isProcessing = true;
+            var success = await DisputeService.ReviewDisputeAsync(dispute!.Id, isApproved, "Test manual review");
+            if (success) await LoadData();
+            else errorMessage = "Failed to review dispute.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition(isBuyer ? "/my-purchases" : "/my-orders", GateSale.Services.TransitionType.SlideRight);
+    }
+}

@@ -1,0 +1,749 @@
+@page "/my-purchases"
+@inject NavigationManager Navigation
+@inject IOrderService OrderService
+@inject IPaymentService PaymentService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Collections.Generic
+@using System.Linq
+
+<div class="my-purchases-container">
+    <!-- Header with back button -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">My Purchases</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab @(activeTab == "all" ? "active" : "")" @onclick="@(() => SetActiveTab("all"))">
+                All
+            </button>
+            <button class="tab @(activeTab == "transit" ? "active" : "")" @onclick="@(() => SetActiveTab("transit"))">
+                In Transit
+            </button>
+            <button class="tab @(activeTab == "completed" ? "active" : "")" @onclick="@(() => SetActiveTab("completed"))">
+                Completed
+            </button>
+            <button class="tab @(activeTab == "refund" ? "active" : "")" @onclick="@(() => SetActiveTab("refund"))">
+                Refund
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <div class="search-bar">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input type="text" placeholder="Search your orders..." @bind="searchQuery" @oninput="OnSearchInput" />
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading your purchases...</p>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="error-state">
+                <p>@errorMessage</p>
+                <button class="btn-primary" @onclick="LoadPurchases">Retry</button>
+            </div>
+        }
+        else if (filteredPurchases.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M53.3333 10.6667H10.6667C8.45753 10.6667 6.66667 12.4575 6.66667 14.6667V49.3333C6.66667 51.5425 8.45753 53.3333 10.6667 53.3333H53.3333C55.5425 53.3333 57.3333 51.5425 57.3333 49.3333V14.6667C57.3333 12.4575 55.5425 10.6667 53.3333 10.6667Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21.3333 26.6667H42.6667" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21.3333 37.3333H32" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>No @GetTabDisplayName() orders</h3>
+                <p>@GetEmptyStateMessage()</p>
+                <button class="btn-primary" @onclick="StartShopping">Start Shopping</button>
+            </div>
+        }
+        else
+        {
+            <div class="purchases-list">
+                @foreach (var purchase in filteredPurchases)
+                {
+                    <div class="purchase-card">
+                        <div class="purchase-content">
+                            <div class="product-image">
+                                <img src="@purchase.ProductImageUrl" alt="@purchase.ProductTitle" />
+                            </div>
+                            <div class="product-details">
+                                <h3 class="product-name">@purchase.ProductTitle</h3>
+                                <div class="order-info">
+                                    <span class="order-id">Order #@purchase.OrderNumber</span>
+                                    <span class="order-date">@purchase.OrderDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <div class="product-price">R @purchase.TotalAmount</div>
+                            </div>
+                            <div class="right-side">
+                                <div class="order-status @GetStatusClass(purchase.Status)">
+                                    @purchase.Status.ToString()
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="spacer"></div>
+                            <div class="purchase-actions">
+                                <button class="btn-action" @onclick="() => ViewOrder(purchase.Id.ToString())">View Details</button>
+
+                                @if (purchase.Status == OrderStatus.AwaitingPayment)
+                                {
+                                    <button class="btn-action-primary" @onclick="() => PayNow(purchase)">Pay Now</button>
+                                    <button class="btn-action-danger" @onclick="() => CancelOrder(purchase.Id.ToString())">Cancel Order</button>
+                                }
+                                else if (purchase.Status == OrderStatus.Delivered || purchase.Status == OrderStatus.Collected || purchase.Status == OrderStatus.BuyerApproved || purchase.Status == OrderStatus.Completed)
+                                {
+                                    <button class="btn-action-danger" @onclick="() => DisputeOrder(purchase.Id.ToString())">Dispute</button>
+                                }
+                                else if (purchase.Status == OrderStatus.InTransit)
+                                {
+                                    <button class="btn-action" @onclick="() => TrackOrder(purchase.Id.ToString())">Track Order</button>
+                                }
+                                else if (purchase.Status == OrderStatus.PaidAwaitingShipment)
+                                {
+                                    <button class="btn-action-danger" @onclick="() => CancelOrder(purchase.Id.ToString())">Cancel Order</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .my-purchases-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+        background-color: white;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .tabs-container {
+        background-color: #F9FAFB;
+        padding: 0 20px;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        background: none;
+        border: none;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #6B7280;
+        cursor: pointer;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin: 8px 4px;
+    }
+
+    .tab.active {
+        background-color: #3ABEF9;
+        color: white;
+    }
+
+    .tab:hover:not(.active) {
+        background-color: #F3F4F6;
+        color: #374151;
+    }
+
+    .search-container {
+        padding: 16px 20px;
+        background-color: #F9FAFB;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .search-bar {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        z-index: 1;
+    }
+
+    .search-bar input {
+        width: 100%;
+        padding: 8px 12px 8px 44px;
+        border: 1px solid #E5E7EB;
+        border-radius: 14px;
+        font-size: 12px;
+        background-color: #FFFFFF;
+        color: #374151;
+    }
+
+    .search-bar input:focus {
+        outline: none;
+        border-color: #3ABEF9;
+        background-color: white;
+    }
+
+    .search-bar input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #F9FAFB;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        height: 400px;
+    }
+
+    .empty-icon {
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: #111827;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #6B7280;
+        margin: 0 0 24px 0;
+    }
+
+    .btn-primary {
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #2AA8E0;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background-color: #F3F4F6;
+        color: #374151;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background-color: #E5E7EB;
+    }
+
+    .btn-danger {
+        background-color: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: #FECACA;
+    }
+
+    .purchases-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .purchase-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #F3F4F6;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .purchase-content {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background-color: #F3F4F6;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        width: 100%;
+        padding-right: 8px;
+    }
+
+    .product-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .order-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 4px 0;
+    }
+
+    .order-id {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6B7280;
+    }
+
+    .order-date {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    .bottom-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        width: 100%;
+    }
+
+    .product-price {
+        font-size: 12px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin: 0;
+    }
+
+    .status-container {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    }
+
+    .order-status {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+        min-width: 70px;
+    }
+
+    .order-status.delivered {
+        background-color: #D1FAE5;
+        color: #059669;
+    }
+
+    .order-status.completed {
+        background-color: #D1FAE5;
+        color: #059669;
+    }
+
+    .order-status.dispute {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .order-status.transit {
+        background-color: #DBEAFE;
+        color: #1D4ED8;
+    }
+
+    .order-status.pending {
+        background-color: #FEF3C7;
+        color: #D97706;
+    }
+
+    .order-status.refund {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .purchase-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        justify-content: flex-end;
+        margin-right: 0;
+    }
+    
+    .card-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: -22px;
+    }
+    
+    .spacer {
+        flex: 1;
+    }
+    
+    .right-side {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    }
+
+    .btn-action {
+        background: none;
+        border: none;
+        color: #3ABEF9;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background-color: #F0F9FF;
+    }
+
+    .btn-action-danger {
+        background: none;
+        border: none;
+        color: #DC2626;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-danger:hover {
+        background-color: #FEF2F2;
+    }
+</style>
+
+@code {
+    private List<OrderSummaryDto> allPurchases = new List<OrderSummaryDto>();
+    private List<OrderSummaryDto> filteredPurchases = new List<OrderSummaryDto>();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string activeTab = "all";
+    private string searchQuery = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPurchases();
+    }
+
+    private async Task LoadPurchases()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            allPurchases = await OrderService.GetBuyerOrdersAsync();
+            FilterPurchases();
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load purchases. Please try again.";
+            Console.WriteLine($"Error loading purchases: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        FilterPurchases();
+    }
+
+    private void FilterPurchases()
+    {
+        var baseFilter = activeTab switch
+        {
+            "transit" => allPurchases.Where(p => p.Status == OrderStatus.InTransit).ToList(),
+            "completed" => allPurchases.Where(p => p.Status == OrderStatus.Completed || p.Status == OrderStatus.Delivered || p.Status == OrderStatus.Collected || p.Status == OrderStatus.BuyerApproved).ToList(),
+            "refund" => allPurchases.Where(p => p.Status == OrderStatus.Refunded).ToList(),
+            _ => allPurchases.ToList()
+        };
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredPurchases = baseFilter.Where(p => 
+                (p.ProductTitle?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                p.OrderNumber.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+        else
+        {
+            filteredPurchases = baseFilter;
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        FilterPurchases();
+    }
+
+    private string GetStatusClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Delivered => "delivered",
+            OrderStatus.Completed => "completed",
+            OrderStatus.Collected => "completed",
+            OrderStatus.BuyerApproved => "completed",
+            OrderStatus.InTransit => "transit",
+            OrderStatus.AwaitingPayment => "pending",
+            OrderStatus.PaidAwaitingShipment => "pending",
+            OrderStatus.Refunded => "refund",
+            OrderStatus.DisputeInProgress => "dispute",
+            _ => "pending"
+        };
+    }
+
+    private string GetTabDisplayName()
+    {
+        return activeTab switch
+        {
+            "transit" => "in transit",
+            "completed" => "completed",
+            "refund" => "refund",
+            _ => ""
+        };
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        return activeTab switch
+        {
+            "transit" => "You don't have any orders in transit",
+            "completed" => "You don't have any completed orders",
+            "refund" => "You don't have any refund orders",
+            _ => "You haven't made any purchases yet"
+        };
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private async Task PayNow(OrderSummaryDto purchase)
+    {
+        try
+        {
+            var paymentResult = await PaymentService.InitiatePaymentAsync(new InitiatePaymentRequest
+            {
+                OrderId = purchase.Id,
+                ReturnUrl = $"{MauiProgram.ApiBaseUrl}payment-success",
+                CancelUrl = $"{MauiProgram.ApiBaseUrl}payment-cancel"
+            });
+
+            if (paymentResult != null && paymentResult.Success && !string.IsNullOrEmpty(paymentResult.PaymentUrl))
+            {
+                await Launcher.Default.OpenAsync(paymentResult.PaymentUrl);
+            }
+            else
+            {
+                // Show error (could use a toast or alert)
+                Console.WriteLine($"Error initiating payment: {paymentResult?.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception initiating payment: {ex.Message}");
+        }
+    }
+
+    private void StartShopping()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ViewOrder(string orderId)
+    {
+        TransitionService.RequestTransition($"/order-details/{orderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void TrackOrder(string orderId)
+    {
+        Console.WriteLine($"Track order: {orderId}");
+        // TODO: Navigate to order tracking page
+    }
+
+    private void CancelOrder(string orderId)
+    {
+        Console.WriteLine($"Cancel order: {orderId}");
+        // TODO: Show confirmation dialog and cancel order
+    }
+
+    private void DisputeOrder(string orderId)
+    {
+        TransitionService.RequestTransition($"/dispute/{orderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ReorderItem(string productId)
+    {
+        TransitionService.RequestTransition($"/pagedetails/{productId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ViewRefund(string orderId)
+    {
+        Console.WriteLine($"View refund: {orderId}");
+        // TODO: Navigate to refund details page
+    }
+}
+

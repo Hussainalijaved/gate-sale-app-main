@@ -1,0 +1,257 @@
+@page "/onboarding2"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+<div class="onboarding-container">
+    <!-- Progress Indicator -->
+    <div class="progress-indicator">
+        <div class="progress-step"></div>
+        <div class="progress-step active"></div>
+        <div class="progress-step"></div>
+    </div>
+
+    <!-- Title -->
+    <h1 class="main-title">Buy and Sell Easily</h1>
+
+    <!-- Feature Icons with central connector -->
+    <div class="feature-icons">
+        <!-- Center Line (visually behind icons) -->
+        <div class="connector-line connector-1"></div>
+
+        <!-- Camera Icon -->
+        <div class="icon-container">
+            <div class="icon-square camera-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 2L7.17 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4H16.83L15 2H9ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="white"/>
+                </svg>
+            </div>
+            <div class="icon-dot"></div>
+        </div>
+        
+        <!-- Truck Icon -->
+        <div class="icon-container">
+            <div class="icon-square truck-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20S9 18.66 9 17H15C15 18.66 16.34 20 18 20S21 18.66 21 17H23V12L20 8ZM19.5 9.5L21.46 12H17V9.5H19.5ZM6 18.5C5.17 18.5 4.5 17.83 4.5 17S5.17 15.5 6 15.5S7.5 16.17 7.5 17S6.83 18.5 6 18.5ZM18 18.5C17.17 18.5 16.5 17.83 16.5 17S17.17 15.5 18 15.5S19.5 16.17 19.5 17S18.83 18.5 18 18.5Z" fill="white"/>
+                </svg>
+            </div>
+            <div class="icon-dot"></div>
+        </div>
+        <div class="connector-line connector-2"></div>
+        <!-- Smiley Icon -->
+        <div class="icon-container">
+            <div class="icon-square smiley-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="white"/>
+                    <circle cx="8" cy="10" r="1.5" fill="#2196F3"/>
+                    <circle cx="16" cy="10" r="1.5" fill="#2196F3"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="icon-dot"></div>
+        </div>
+    </div>
+
+    <!-- Features List -->
+    <div class="features-list">
+        <div class="feature-item">
+            <div class="checkmark">✓</div>
+            <span>List your items in seconds</span>
+        </div>
+        <div class="feature-item">
+            <div class="checkmark">✓</div>
+            <span>Buy safely — payments and deliveries are handled by us</span>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="navigation-section-bottom">
+        <button class="btn-base btn-primary btn-next" @onclick="GoToNextPage">Next</button>
+        <p class="text-skip" @onclick="SkipOnboarding">Skip</p>
+    </div>
+</div>
+
+<style>
+    .onboarding-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+       /* background: linear-gradient(90deg, #FFFFFF 0%, #F8FCFF 40%, #F0F8FF 70%, #E8F4FD 100%);*/
+        height: 100vh;
+        width: 375px;
+        margin-top: 10px;
+        position: relative;
+    }
+
+    .progress-indicator {
+        display: flex;
+        gap: 8px;
+        margin-top: 80px; /* reduced spacing */
+        
+        justify-content: center;
+    }
+
+    .progress-step {
+        width: 24px;
+        height: 4px;
+        background-color: #e0e0e0;
+        border-radius: 2px;
+    }
+
+    .progress-step.active {
+        background-color: #00bfff;
+    }
+
+    .main-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        text-align: center;
+        margin-bottom: 40px;
+        margin-top: 0;
+    }
+
+    .feature-icons {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 280px;
+        position: relative;
+        margin-bottom: 80px;
+    }
+
+    /* Shared connector style */
+    .connector-line {
+        position: absolute;
+        top: 40px;
+        height: 2px;
+        background-color: #e0e0e0;
+        z-index: 1;
+    }
+
+    /* Connector between Camera and Truck */
+    .connector-1 {
+        position: absolute;
+        top: 40px;
+        width: 35px; /* Shorter length */
+        height: 2px;
+        background-color: #e0e0e0;
+        left: 37%;
+        transform: translateX(-100%); /* Shift it to left */
+        z-index: 1;
+    }
+
+    .connector-2 {
+        position: absolute;
+        top: 40px;
+        width: 35px;
+        height: 2px;
+        background-color: #e0e0e0;
+        left: 63%;
+        transform: translateX(0); /* Middle */
+        z-index: 1;
+    }
+
+
+
+    .icon-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .icon-square {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .camera-icon {
+        background-color: #FF8A65;
+    }
+
+    
+    .truck-icon {
+        background-color: #4caf50;
+    }
+
+
+    .smiley-icon {
+        background-color: #2196f3;
+    }
+
+    .icon-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #2196f3;
+        border-radius: 50%;
+    }
+
+    .features-list {
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 120px;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        font-size: 16px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .checkmark {
+        width: 20px;
+        height: 20px;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 12px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .navigation-section-bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .text-skip {
+        margin-top: 10px;
+        cursor: pointer;
+    }
+
+
+    
+</style>
+
+@code {
+    private void GoToNextPage()
+    {
+        TransitionService.RequestTransition("/onboarding3", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void SkipOnboarding()
+    {
+        TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.Fade);
+    }
+}

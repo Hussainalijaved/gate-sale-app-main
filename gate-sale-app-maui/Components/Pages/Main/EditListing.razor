@@ -1,0 +1,472 @@
+@page "/edit-listing/{ProductId}"
+@inject NavigationManager Navigation
+@inject IProductService ProductService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+
+<div class="edit-listing-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Edit Listing</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading listing...</p>
+            </div>
+        }
+        else if (product == null)
+        {
+            <div class="error-state">
+                <h3>Listing not found</h3>
+                <p>The listing you're looking for doesn't exist or has been deleted.</p>
+                <button class="btn-primary" @onclick="GoBack">Go Back</button>
+            </div>
+        }
+        else
+        {
+            <div class="form-container">
+                <!-- Product Image Preview -->
+                <div class="image-preview">
+                    <img src="@product.ImageUrl" alt="@product.Name" />
+                </div>
+
+                <!-- Title -->
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" @bind="product.Name" placeholder="Enter product title" />
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea @bind="product.Description" placeholder="Enter product description" rows="4"></textarea>
+                </div>
+
+                <!-- Price -->
+                <div class="form-group">
+                    <label>Price</label>
+                    <div class="price-input-wrapper">
+                        <span class="currency">R</span>
+                        <input type="text" @bind="priceValue" placeholder="0.00" />
+                    </div>
+                </div>
+
+                <!-- Condition -->
+                <div class="form-group">
+                    <label>Condition</label>
+                    <select @bind="product.Condition">
+                        <option value="New">New</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                    </select>
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <label>Category</label>
+                    <select @bind="product.Category">
+                        <option value="Academic">Academic / School Supplies</option>
+                        <option value="Uniform">Uniform & Clothing</option>
+                        <option value="Tech">Tech & Electronics</option>
+                        <option value="Toys">Toys & Games</option>
+                        <option value="Sports">Sports & Outdoor</option>
+                        <option value="Arts">Arts & Crafts</option>
+                        <option value="Miscellaneous">Miscellaneous</option>
+                    </select>
+                </div>
+
+                <!-- Error Message -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="7" stroke="#EF4444" stroke-width="1.5"/>
+                            <path d="M8 5V8.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+                            <circle cx="8" cy="11" r="0.75" fill="#EF4444"/>
+                        </svg>
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                <!-- Success Message -->
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="success-message">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="7" stroke="#10B981" stroke-width="1.5"/>
+                            <path d="M5 8L7 10L11 6" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>@successMessage</span>
+                    </div>
+                }
+
+                <!-- Save Button -->
+                <button class="btn-save" @onclick="SaveChanges" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="btn-spinner"></span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save Changes</span>
+                    }
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .edit-listing-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        padding-bottom: 100px;
+    }
+
+    .loading-container, .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        text-align: center;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 8px 0;
+    }
+
+    .error-state p {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0 0 20px 0;
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .image-preview {
+        width: 100%;
+        height: 200px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #F3F4F6;
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+        padding: 12px 16px;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        font-size: 16px;
+        color: #111827;
+        background: #FAFBFC;
+        transition: all 0.2s ease;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        outline: none;
+        border-color: #3ABEF9;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
+    }
+
+    .price-input-wrapper {
+        display: flex;
+        align-items: center;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        background: #FAFBFC;
+        overflow: hidden;
+    }
+
+    .price-input-wrapper .currency {
+        padding: 12px 12px 12px 16px;
+        font-size: 16px;
+        color: #6B7280;
+        background: #F3F4F6;
+        border-right: 1px solid #E5E7EB;
+    }
+
+    .price-input-wrapper input {
+        flex: 1;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .price-input-wrapper input:focus {
+        box-shadow: none;
+    }
+
+    .error-message, .success-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .error-message {
+        background: #FEE2E2;
+        color: #991B1B;
+        border: 1px solid #FECACA;
+    }
+
+    .success-message {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+
+    .btn-primary, .btn-save {
+        width: 100%;
+        padding: 14px 24px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background-color: #3ABEF9;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2AA8E0;
+    }
+
+    .btn-save {
+        background-color: #10B981;
+        color: white;
+        margin-top: 10px;
+    }
+
+    .btn-save:hover:not(:disabled) {
+        background-color: #059669;
+    }
+
+    .btn-save:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string ProductId { get; set; } = "";
+
+    private Product? product;
+    private string priceValue = "";
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProduct();
+    }
+
+    private async Task LoadProduct()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            product = await ProductService.GetProductByIdAsync(ProductId);
+            
+            if (product != null)
+            {
+                // Extract numeric value from price string (e.g., "R 45.00" -> "45.00")
+                priceValue = product.Price.Replace("R", "").Replace("$", "").Replace(",", "").Trim();
+            }
+            
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load listing: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        if (product == null) return;
+        
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+            successMessage = null;
+            
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(product.Name))
+            {
+                errorMessage = "Please enter a title for your listing.";
+                isSaving = false;
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(priceValue) || !decimal.TryParse(priceValue, out decimal price) || price <= 0)
+            {
+                errorMessage = "Please enter a valid price.";
+                isSaving = false;
+                return;
+            }
+            
+            // Update price in product
+            product.Price = $"R {price:F2}";
+            
+            // Call API to update product
+            var success = await ProductService.UpdateProductAsync(product);
+            
+            if (success)
+            {
+                successMessage = "Listing updated successfully!";
+                
+                // Navigate back after short delay
+                await Task.Delay(1500);
+                GoBack();
+            }
+            else
+            {
+                errorMessage = "Failed to update listing. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating listing: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/my-listings", GateSale.Services.TransitionType.SlideRight);
+    }
+}

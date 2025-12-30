@@ -1,0 +1,15 @@
+﻿
+@page "/welcome"
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Always redirect to onboarding slider for welcome flow
+        Navigation.NavigateTo("/onboarding-slider");
+    }
+}
+
+<!-- This page redirects automatically, no content needed -->
+
+

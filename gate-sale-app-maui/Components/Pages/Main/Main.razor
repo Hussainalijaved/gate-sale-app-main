@@ -1,0 +1,147 @@
+@page "/main"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+<div class="main-container">
+    <div class="header">
+        <h1>Welcome to GateSale!</h1>
+        <p>Your safe marketplace for students</p>
+    </div>
+    
+    <div class="content">
+        <div class="feature-card">
+            <h3>🛍️ Buy & Sell</h3>
+            <p>Find great deals from fellow students</p>
+        </div>
+        
+        <div class="feature-card">
+            <h3>🔒 Safe & Secure</h3>
+            <p>All transactions are protected</p>
+        </div>
+        
+        <div class="feature-card">
+            <h3>📱 Easy to Use</h3>
+            <p>List items in seconds</p>
+        </div>
+    </div>
+    
+    <div class="actions">
+        <button class="primary-button" @onclick="StartSelling">Start Selling</button>
+        <button class="secondary-button" @onclick="BrowseItems">Browse Items</button>
+    </div>
+</div>
+
+<style>
+    .main-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: white;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .header p {
+        font-size: 16px;
+        color: #666;
+        margin: 0;
+    }
+
+    .content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    .feature-card {
+        background: #f8f9fa;
+        border-radius: 16px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .feature-card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .feature-card p {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+    }
+
+    .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        max-width: 320px;
+    }
+
+    .primary-button {
+        background-color: #2aaeff;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+
+    .primary-button:hover {
+        background-color: #1c7ed6;
+    }
+
+    .secondary-button {
+        background-color: transparent;
+        color: #2aaeff;
+        border: 2px solid #2aaeff;
+        border-radius: 25px;
+        padding: 14px 32px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .secondary-button:hover {
+        background-color: #2aaeff;
+        color: white;
+    }
+</style>
+
+@code {
+    private void StartSelling()
+    {
+        TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void BrowseItems()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+}

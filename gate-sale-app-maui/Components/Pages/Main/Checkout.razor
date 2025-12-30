@@ -1,0 +1,531 @@
+@page "/checkout/{productId}"
+@inject IOrderService OrderService
+@inject ILockerService LockerService
+@inject IProductService ProductService
+@inject IPaymentService PaymentService
+@inject GateSale.Services.PageTransitionService TransitionService
+@inject NavigationManager Navigation
+@using GateSale.Models
+@using GateSale.Services.Interfaces
+@using System.Collections.Generic
+
+<div class="checkout-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Checkout</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Preparing your checkout...</p>
+            </div>
+        }
+        else if (product == null)
+        {
+            <div class="error-state">
+                <p>Product not found.</p>
+                <button class="btn-primary" @onclick="GoBack">Go Back</button>
+            </div>
+        }
+        else
+        {
+            <!-- Product Summary -->
+            <div class="section product-summary">
+                <div class="product-card">
+                    <img src="@product.ImageUrl" alt="@product.Title" class="product-image" />
+                    <div class="product-details">
+                        <h3 class="product-title">@product.Title</h3>
+                        <p class="product-price">@product.CurrentPrice</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locker Selection -->
+            <div class="section locker-selection">
+                <h2 class="section-title">Select Delivery Locker</h2>
+                <p class="section-subtitle">Choose a Pudo locker near you for pickup</p>
+
+                @if (isFetchingLockers)
+                {
+                    <div class="mini-loading">
+                        <div class="spinner-small"></div>
+                        <span>Finding nearby lockers...</span>
+                    </div>
+                }
+                else if (lockers.Count == 0)
+                {
+                    <div class="empty-lockers">
+                        <p>No lockers found in your area.</p>
+                        <button class="btn-secondary" @onclick="FetchLockers">Retry</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="lockers-list">
+                        @foreach (var locker in lockers)
+                        {
+                            <div class="locker-item @(selectedLocker?.Id == locker.Id ? "selected" : "")" @onclick="() => SelectLocker(locker)">
+                                <div class="locker-info">
+                                    <span class="locker-name">@locker.Location</span>
+                                    <span class="locker-code">Code: @locker.LockerCode</span>
+                                    @if (!string.IsNullOrEmpty(locker.Description))
+                                    {
+                                        <span class="locker-desc">@locker.Description</span>
+                                    }
+                                </div>
+                                <div class="selection-indicator">
+                                    <div class="radio-circle"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Order Summary -->
+            <div class="section order-summary">
+                <h2 class="section-title">Order Summary</h2>
+                <div class="summary-row">
+                    <span>Item Price</span>
+                    <span>@product.CurrentPrice</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping (Pudo)</span>
+                    <span>R 100.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span>R @((GetNumericPrice(product.CurrentPrice) + 100).ToString("F2"))</span>
+                </div>
+            </div>
+
+            @if (errorMessage != null)
+            {
+                <div class="error-banner">
+                    @errorMessage
+                </div>
+            }
+
+            <!-- Place Order Button -->
+            <div class="action-section">
+                <button class="btn-place-order @(selectedLocker == null || isPlacingOrder ? "disabled" : "")" 
+                        @onclick="PlaceOrder" 
+                        disabled="@(selectedLocker == null || isPlacingOrder)">
+                    @if (isPlacingOrder)
+                    {
+                        <div class="spinner-white"></div>
+                        <span>Processing...</span>
+                    }
+                    else
+                    {
+                        <span>Confirm & Pay</span>
+                    }
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .checkout-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #F9FAFB;
+        max-width: 375px;
+        margin: 0 auto;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: white;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .section {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+    }
+
+    .section-subtitle {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0 0 16px 0;
+    }
+
+    .product-card {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .product-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .product-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin: 4px 0 0 0;
+    }
+
+    .lockers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .locker-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .locker-item.selected {
+        border-color: #3ABEF9;
+        background-color: #F0F9FF;
+    }
+
+    .locker-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .locker-name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .locker-code {
+        font-size: 11px;
+        color: #6B7280;
+    }
+
+    .locker-desc {
+        font-size: 11px;
+        color: #9CA3AF;
+    }
+
+    .radio-circle {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #D1D5DB;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .locker-item.selected .radio-circle {
+        border-color: #3ABEF9;
+    }
+
+    .locker-item.selected .radio-circle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        background-color: #3ABEF9;
+        border-radius: 50%;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #4B5563;
+    }
+
+    .summary-row.total {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #F3F4F6;
+        font-weight: 700;
+        color: #111827;
+        font-size: 16px;
+    }
+
+    .action-section {
+        margin-top: 8px;
+        margin-bottom: 24px;
+    }
+
+    .btn-place-order {
+        width: 100%;
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-place-order.disabled {
+        background-color: #D1D5DB;
+        cursor: not-allowed;
+    }
+
+    .error-banner {
+        background-color: #FEE2E2;
+        color: #DC2626;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 16px;
+        text-align: center;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    .spinner-small {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #F3F4F6;
+        border-top: 2px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .spinner-white {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .mini-loading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #6B7280;
+        padding: 10px;
+    }
+</style>
+
+@code {
+    [Parameter] public string ProductId { get; set; } = string.Empty;
+
+    private ProductDetail? product;
+    private List<LockerDto> lockers = new List<LockerDto>();
+    private LockerDto? selectedLocker;
+    private bool isLoading = true;
+    private bool isFetchingLockers = false;
+    private bool isPlacingOrder = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            product = await ProductService.GetProductDetailByIdAsync(ProductId);
+            await FetchLockers();
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing checkout: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private async Task FetchLockers()
+    {
+        try
+        {
+            isFetchingLockers = true;
+            // Using dummy coordinates for Cape Town as a default
+            lockers = await LockerService.GetNearbyLockersAsync(-33.9249, 18.4241, 50);
+            if (lockers.Count > 0)
+            {
+                selectedLocker = lockers[0];
+            }
+            isFetchingLockers = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching lockers: {ex.Message}");
+            isFetchingLockers = false;
+        }
+    }
+
+    private void SelectLocker(LockerDto locker)
+    {
+        selectedLocker = locker;
+    }
+
+    private async Task PlaceOrder()
+    {
+        if (selectedLocker == null || product == null || isPlacingOrder) return;
+
+        try
+        {
+            isPlacingOrder = true;
+            errorMessage = null;
+
+            var request = new CreateOrderRequest
+            {
+                ProductId = Guid.Parse(product.Id),
+                BuyerLockerId = selectedLocker.Id,
+                ShippingCost = 100,
+                PackageSize = "Medium" // Default
+            };
+
+            var order = await OrderService.CreateOrderAsync(request);
+
+            if (order != null)
+            {
+                // Success! Now initiate payment
+                var paymentResult = await PaymentService.InitiatePaymentAsync(new InitiatePaymentRequest
+                {
+                    OrderId = order.Id,
+                    ReturnUrl = $"{MauiProgram.ApiBaseUrl}payment-success",
+                    CancelUrl = $"{MauiProgram.ApiBaseUrl}payment-cancel"
+                });
+
+                if (paymentResult != null && paymentResult.Success && !string.IsNullOrEmpty(paymentResult.PaymentUrl))
+                {
+                    // Open payment URL in browser
+                    await Launcher.Default.OpenAsync(paymentResult.PaymentUrl);
+                    
+                    // Navigate to my purchases
+                    TransitionService.RequestTransition("/my-purchases", GateSale.Services.TransitionType.SlideLeft);
+                }
+                else
+                {
+                    errorMessage = "Order created but failed to initiate payment. You can pay from your purchases.";
+                    TransitionService.RequestTransition("/my-purchases", GateSale.Services.TransitionType.SlideLeft);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            if (errorMessage.Contains("Unauthorized") || errorMessage.Contains("401"))
+            {
+                errorMessage = "Your session has expired. Please log in again.";
+            }
+            else if (errorMessage.Length > 500)
+            {
+                errorMessage = "Failed to place order. Please try again.";
+            }
+            Console.WriteLine($"Error placing order: {ex.Message}");
+        }
+        finally
+        {
+            isPlacingOrder = false;
+        }
+    }
+
+    private decimal GetNumericPrice(string priceText)
+    {
+        if (string.IsNullOrEmpty(priceText)) return 0;
+        
+        // Remove currency symbols and commas
+        var cleanPrice = new string(priceText.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        
+        if (decimal.TryParse(cleanPrice, out decimal price))
+            return price;
+            
+        return 0;
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition($"/pagedetails/{ProductId}", GateSale.Services.TransitionType.SlideRight);
+    }
+}

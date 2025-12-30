@@ -1,0 +1,544 @@
+@page "/parentalconsent"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+@inject GateSale.Services.Interfaces.IUserService UserService
+@using System.Timers
+@implements IDisposable
+
+@if (!isRequestSent)
+{
+    <div class="parental-consent-container">
+        <!-- Header with back button -->
+        <div class="header-section">
+            <button class="back-button" @onclick="GoBack">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <h1 class="header-title">Setup</h1>
+            <div class="header-spacer"></div>
+        </div>
+
+        <!-- Illustration section -->
+        <div class="illustration-section">
+            <div class="image-wrapper">
+                <img src="/images/parental.png" alt="Parental Consent" class="illustration-image" />
+                <div class="floating-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" fill="#4ADE80"/>
+                        <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" stroke="#E5E7EB"/>
+                        <g clip-path="url(#clip0_2_696)">
+                            <path d="M17.0297 7.97034C17.3227 8.26331 17.3227 8.73909 17.0297 9.03206L11.0297 15.0321C10.7368 15.325 10.261 15.325 9.96802 15.0321L6.96802 12.0321C6.67505 11.7391 6.67505 11.2633 6.96802 10.9703C7.26099 10.6774 7.73677 10.6774 8.02974 10.9703L10.5 13.4383L15.9704 7.97034C16.2633 7.67737 16.7391 7.67737 17.0321 7.97034H17.0297Z" fill="white"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_2_696">
+                                <path d="M6.75 5.5H17.25V17.5H6.75V5.5Z" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content section -->
+        <div class="content-section">
+            <h2 class="main-title">Parental Consent Required</h2>
+            <p class="description">
+                We need your parent's approval before you can start using GateSale.
+            </p>
+        </div>
+
+        <!-- Form -->
+        <div class="form-section">
+            <div class="input-group">
+                <label class="input-label">Parent's Full Name</label>
+                <input type="text" class="form-input" placeholder="Enter parent's full name" @bind="ParentName" />
+            </div>
+            <div class="input-group">
+                <label class="input-label">Parent's Email Address</label>
+                <input type="email" class="form-input" placeholder="parent@example.com" @bind="ParentEmailInput" />
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" fill="#4ADE80"/>
+                        <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" stroke="#E5E7EB"/>
+                        <g clip-path="url(#clip0_2_696)">
+                            <path d="M17.0297 7.97034C17.3227 8.26331 17.3227 8.73909 17.0297 9.03206L11.0297 15.0321C10.7368 15.325 10.261 15.325 9.96802 15.0321L6.96802 12.0321C6.67505 11.7391 6.67505 11.2633 6.96802 10.9703C7.26099 10.6774 7.73677 10.6774 8.02974 10.9703L10.5 13.4383L15.9704 7.97034C16.2633 7.67737 16.7391 7.67737 17.0321 7.97034H17.0297Z" fill="white"/>
+                        </g>
+                    </svg>
+                </div>
+                <p class="info-text">
+                    Your parent will receive a secure email with instructions to approve your account. This helps keep you safe online.
+                </p>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message" style="color: #EF4444; text-align: center; margin-bottom: 10px; padding: 0 20px;">
+                @errorMessage
+            </div>
+        }
+
+        <!-- Button -->
+        <div class="button-section">
+            <button class="consent-button" @onclick="SendConsentRequest" disabled="@isProcessing">
+                @(isProcessing ? "Sending..." : "Send Consent Request")
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-section">
+            <p class="footer-text">
+                By continuing, you agree to our <span class="link-text">Terms of Service</span> and <span class="link-text">Privacy Policy</span>
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="parental-consent-container">
+        <!-- Back Button -->
+        <button class="back-button" style="position: absolute; top: 20px; left: 20px;" @onclick="() => isRequestSent = false">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M12 19L5 12L12 5" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <div class="content-section" style="margin-top: 80px;">
+            <div class="illustration-section">
+                <div class="image-wrapper @(isChecking ? "pulse" : "")" style="background-color: #E0F2FE;">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="#0EA5E9"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h2 class="main-title">Check Parent's Email</h2>
+            <p class="description">We've sent a consent request to:</p>
+            <p class="email-display" style="font-size: 18px; font-weight: 600; color: #0EA5E9; margin: 10px 0;">@_parentEmail</p>
+            <p class="instruction" style="font-size: 14px; color: #6B7280; line-height: 1.5; padding: 0 20px;">
+                Ask your parent to click the <strong>Approve Access</strong> button in the email to activate your account.
+            </p>
+
+            <div class="status-section" style="margin-top: 30px; display: flex; justify-content: center;">
+                @if (isApproved)
+                {
+                    <div class="status-badge verified" style="background: #D1FAE5; color: #065F46; padding: 10px 20px; border-radius: 50px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#10B981"/>
+                        </svg>
+                        <span>Consent Approved!</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="status-badge checking" style="background: #E0F2FE; color: #0369A1; padding: 10px 20px; border-radius: 50px; display: flex; align-items: center; gap: 8px;">
+                        <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #0EA5E9; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                        <span>Waiting for approval...</span>
+                    </div>
+                }
+            </div>
+
+            @if (!isApproved)
+            {
+                <button class="consent-button" style="margin-top: 40px; width: 80%;" @onclick="ManualCheck" disabled="@isChecking">
+                    @(isChecking ? "Checking..." : "Check Status Now")
+                </button>
+            }
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-section">
+            <p class="footer-text">
+                By continuing, you agree to our <span class="link-text">Terms of Service</span> and <span class="link-text">Privacy Policy</span>
+            </p>
+        </div>
+    </div>
+}
+
+<style>
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        50% { transform: scale(1.05); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.2); }
+    }
+    .pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .parental-consent-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FFFFFF;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        margin-top: 10px;
+        border-bottom: 1px solid #E0E0E0;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .illustration-section {
+        display: flex;
+        justify-content: center;
+        margin: 30px 0;
+    }
+
+    .image-wrapper {
+        position: relative;
+        width: 190px;
+        height: 190px;
+        background-color: #FFE0E6;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .illustration-image {
+        width: 190px;
+        height: auto;
+        object-fit: contain;
+    }
+
+    .floating-icon {
+        position: absolute;
+        bottom: -10px;
+        right: -10px;
+        width: 40px;
+        height: 40px;
+        background-color: #4CAF50;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .content-section {
+        text-align: center;
+        padding: 0 20px;
+        margin-bottom: 30px;
+    }
+
+    .main-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 12px;
+    }
+
+    .description {
+        font-size: 16px;
+        color: #666666;
+        margin: 0;
+    }
+
+    .form-section {
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-input {
+        height: 48px;
+        padding: 12px 16px;
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: #FAFAFA;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #00BFFF;
+        background-color: #fff;
+        box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.1);
+    }
+
+    .form-input::placeholder {
+        color: #AAAAAA;
+    }
+
+    .info-section {
+        padding: 0 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-card {
+        background: #4ADE801A;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+    }
+
+    .info-text {
+        font-size: 14px;
+        color: black;
+    }
+
+    .button-section {
+        padding: 0 20px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .consent-button {
+        width: 100%;
+        height: 50px;
+        background-color: #00BFFF;
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 3px 8px rgba(0, 191, 255, 0.3);
+    }
+
+    .consent-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .footer-section {
+        padding: 0 20px 40px 20px;
+        text-align: center;
+    }
+
+    .footer-text {
+        font-size: 12px;
+        color: #999999;
+    }
+
+    .link-text {
+        color: #00BFFF;
+        cursor: pointer;
+    }
+
+    .link-text:hover {
+        text-decoration: underline;
+    }
+</style>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ParentEmail { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? StudentEmail { get; set; }
+
+    private string ParentName = "";
+    private string _parentEmail = string.Empty;
+    private bool isRequestSent = false;
+    private bool isChecking = false;
+    private bool isApproved = false;
+    private bool isProcessing = false;
+    private string errorMessage = "";
+    private Timer? pollingTimer;
+    private int pollAttempts = 0;
+    private const int MaxPollAttempts = 120; // 10 minutes at 5 second intervals
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(ParentEmail)) _parentEmail = ParentEmail;
+    }
+
+    private string ParentEmailInput
+    {
+        get => _parentEmail;
+        set => _parentEmail = value;
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private async Task SendConsentRequest()
+    {
+        if (string.IsNullOrWhiteSpace(ParentName) || string.IsNullOrWhiteSpace(_parentEmail))
+        {
+            errorMessage = "Please enter both parent's name and email.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(StudentEmail))
+        {
+            errorMessage = "Student email is missing. Please try signing up again.";
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        var success = await UserService.SubmitParentConsentAsync(StudentEmail, ParentName, _parentEmail);
+
+        isProcessing = false;
+
+        if (success)
+        {
+            isRequestSent = true;
+            StartPolling();
+        }
+        else
+        {
+            errorMessage = "Failed to send consent request. Please try again.";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void StartPolling()
+    {
+        pollingTimer = new Timer(5000); // Check every 5 seconds
+        pollingTimer.Elapsed += async (sender, e) => await CheckStatus();
+        pollingTimer.Start();
+        
+        // Also do an immediate check
+        _ = CheckStatus();
+    }
+
+    private async Task CheckStatus()
+    {
+        if (isApproved || string.IsNullOrEmpty(StudentEmail))
+            return;
+
+        pollAttempts++;
+        
+        if (pollAttempts > MaxPollAttempts)
+        {
+            pollingTimer?.Stop();
+            await InvokeAsync(() => {
+                errorMessage = "Approval timeout. Please try again.";
+                StateHasChanged();
+            });
+            return;
+        }
+
+        try
+        {
+            isChecking = true;
+            await InvokeAsync(StateHasChanged);
+            
+            var result = await UserService.CheckEmailVerificationStatusAsync(StudentEmail);
+            
+            await InvokeAsync(() => {
+                if (result.Status == "Active")
+                {
+                    isApproved = true;
+                    isChecking = false;
+                    pollingTimer?.Stop();
+                    errorMessage = "";
+                    StateHasChanged();
+                    
+                    // Navigate to login after a short delay
+                    _ = NavigateAfterDelay();
+                }
+                else
+                {
+                    isChecking = false;
+                    StateHasChanged();
+                }
+            });
+        }
+        catch
+        {
+            await InvokeAsync(() => {
+                isChecking = false;
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task ManualCheck()
+    {
+        isChecking = true;
+        errorMessage = "";
+        StateHasChanged();
+        
+        await CheckStatus();
+        
+        if (!isApproved)
+        {
+            errorMessage = "Consent not yet approved. Please ask your parent to check their email.";
+        }
+        
+        isChecking = false;
+        StateHasChanged();
+    }
+
+    private async Task NavigateAfterDelay()
+    {
+        await Task.Delay(3000);
+        await InvokeAsync(() => {
+            TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.SlideLeft);
+        });
+    }
+
+    public void Dispose()
+    {
+        pollingTimer?.Stop();
+        pollingTimer?.Dispose();
+    }
+}

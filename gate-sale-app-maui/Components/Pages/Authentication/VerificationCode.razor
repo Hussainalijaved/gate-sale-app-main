@@ -1,0 +1,664 @@
+@page "/verification-code"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+@inject GateSale.Services.Interfaces.IUserService UserService
+@using System.Timers
+@implements IDisposable
+
+<div class="verification-container">
+    <!-- Back Button -->
+    <button class="back-button" @onclick="GoBack">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M19 12H5M12 19L5 12L12 5" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
+
+    <!-- Main Content -->
+    <div class="content-section">
+        <!-- Animated Email Icon -->
+        <div class="icon-section">
+            <div class="icon-circle @(isChecking ? "pulse" : "")">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Title and Description -->
+        <div class="text-section">
+            <h1 class="main-title">@(Mode == "reset" ? "Reset Password" : "Check Your Email")</h1>
+            <p class="description">@(Mode == "reset" ? "Enter the 6-digit code we sent to" : "We've sent a verification link to")</p>
+            <p class="email-display">@userEmail</p>
+            @if (Mode != "reset")
+            {
+                <p class="instruction">Click the <strong>Verify</strong> button in your email to complete registration</p>
+            }
+        </div>
+
+        @if (Mode == "reset")
+        {
+            <!-- 6-Digit Code Input -->
+            <div class="code-input-container">
+                @for (int i = 0; i < 6; i++)
+                {
+                    var index = i;
+                    <input @ref="codeInputs[index]"
+                           type="number"
+                           maxlength="1"
+                           class="code-input"
+                           @bind="codeDigits[index]"
+                           @oninput="(e) => HandleInput(e, index)"
+                           @onkeydown="(e) => HandleKeyDown(e, index)" />
+                }
+            </div>
+
+            <!-- Password Inputs -->
+            <div class="password-section">
+                <div class="input-group">
+                    <label class="input-label">New Password</label>
+                    <input type="password" class="form-input" placeholder="Enter new password" @bind="NewPassword" />
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Confirm Password</label>
+                    <input type="password" class="form-input" placeholder="Confirm new password" @bind="ConfirmPassword" />
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <button class="btn-open-email" @onclick="HandleResetPassword" disabled="@isProcessing">
+                <span>@(isProcessing ? "Resetting..." : "Reset Password")</span>
+            </button>
+        }
+        else
+        {
+            <!-- Status Indicator -->
+            <div class="status-section">
+                @if (isVerified)
+                {
+                    <div class="status-badge verified">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#10B981"/>
+                        </svg>
+                        <span>Email Verified!</span>
+                    </div>
+                }
+                else if (isChecking)
+                {
+                    <div class="status-badge checking">
+                        <div class="spinner"></div>
+                        <span>Waiting for verification...</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="status-badge pending">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="2"/>
+                            <path d="M12 6v6l4 2" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>Pending verification</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Open Email Button -->
+            @if (!isVerified)
+            {
+                <button class="btn-open-email" @onclick="OpenEmailApp">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white"/>
+                    </svg>
+                    <span>Open Email App</span>
+                </button>
+            }
+
+            <!-- Manual Check Button -->
+            @if (!isVerified)
+            {
+                <button class="btn-check-status" @onclick="ManualCheck" disabled="@isChecking">
+                    @(isChecking ? "Checking..." : "I've verified my email")
+                </button>
+            }
+        }
+
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <!-- Help Text -->
+        <div class="help-section">
+            <p class="help-text">Didn't receive the email? Check your spam folder</p>
+            @if (Mode == "register")
+            {
+                <button type="button" class="resend-link" @onclick="GoBack">
+                    Use a different email
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .verification-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 50%, #E0F2FE 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        position: relative;
+    }
+
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+
+    .back-button:hover {
+        background: #F3F4F6;
+        transform: scale(1.05);
+    }
+
+    .content-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px 24px 40px 24px;
+        max-width: 400px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .icon-section {
+        margin-bottom: 32px;
+    }
+
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #3ABEF9 0%, #0EA5E9 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(58, 190, 249, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .icon-circle.pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(58, 190, 249, 0.3); }
+        50% { transform: scale(1.05); box-shadow: 0 12px 40px rgba(58, 190, 249, 0.5); }
+    }
+
+    .text-section {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .main-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1F2937;
+        margin: 0 0 12px 0;
+        line-height: 1.2;
+    }
+
+    .description {
+        font-size: 16px;
+        color: #6B7280;
+        margin: 0 0 8px 0;
+        line-height: 1.5;
+    }
+
+    .email-display {
+        font-size: 18px;
+        font-weight: 600;
+        color: #3ABEF9;
+        margin: 0 0 16px 0;
+        word-break: break-all;
+    }
+
+    .instruction {
+        font-size: 15px;
+        color: #4B5563;
+        margin: 0;
+        line-height: 1.6;
+        padding: 0 16px;
+    }
+
+    .instruction strong {
+        color: #3ABEF9;
+    }
+
+    .status-section {
+        margin-bottom: 32px;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .status-badge.verified {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
+    .status-badge.checking {
+        background: #E0F2FE;
+        color: #0369A1;
+    }
+
+    .status-badge.pending {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+
+    .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #0EA5E9;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .btn-open-email {
+        width: 100%;
+        height: 52px;
+        background: linear-gradient(135deg, #3ABEF9 0%, #0EA5E9 100%);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 16px rgba(58, 190, 249, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .btn-open-email:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(58, 190, 249, 0.4);
+    }
+
+    .btn-check-status {
+        width: 100%;
+        height: 48px;
+        background: white;
+        color: #3ABEF9;
+        border: 2px solid #3ABEF9;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 24px;
+    }
+
+    .btn-check-status:hover:not(:disabled) {
+        background: #F0F9FF;
+    }
+
+    .btn-check-status:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .error-message {
+        color: #EF4444;
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: #FEF2F2;
+        border-radius: 8px;
+        width: 100%;
+    }
+
+    .help-section {
+        text-align: center;
+    }
+
+    .help-text {
+        font-size: 14px;
+        color: #9CA3AF;
+        margin: 0 0 8px 0;
+    }
+
+    .resend-link {
+        background: none;
+        border: none;
+        color: #3ABEF9;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .resend-link:hover {
+        text-decoration: underline;
+    }
+
+    .code-input-container {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 32px;
+    }
+
+    .code-input {
+        width: 45px;
+        height: 55px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: 700;
+        border: 2px solid #E5E7EB;
+        border-radius: 12px;
+        background: white;
+        color: #1F2937;
+        transition: all 0.2s ease;
+    }
+
+    .code-input:focus {
+        outline: none;
+        border-color: #3ABEF9;
+        box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
+    }
+
+    .password-section {
+        width: 100%;
+        margin-bottom: 24px;
+    }
+
+    .input-group {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+        text-align: left;
+    }
+
+    .form-input {
+        width: 100%;
+        height: 48px;
+        padding: 12px 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
+        font-size: 16px;
+        color: #1F2937;
+        background-color: #F9FAFB;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3ABEF9;
+        background-color: white;
+    }
+</style>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Email { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Mode { get; set; } // "register" or "reset"
+
+    private bool isVerified = false;
+    private bool isChecking = false;
+    private bool isProcessing = false;
+    private string errorMessage = "";
+    private string userEmail => Email ?? "your email";
+    private Timer? pollingTimer;
+    private int pollAttempts = 0;
+    private const int MaxPollAttempts = 60; // 5 minutes at 5 second intervals
+
+    private string[] codeDigits = new string[6] { "", "", "", "", "", "" };
+    private ElementReference[] codeInputs = new ElementReference[6];
+    private string NewPassword = "";
+    private string ConfirmPassword = "";
+
+    protected override void OnInitialized()
+    {
+        // Start polling for verification status ONLY in register mode
+        if (Mode != "reset")
+        {
+            StartPolling();
+        }
+    }
+
+    private async Task HandleInput(ChangeEventArgs e, int index)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(value))
+        {
+            // Keep only the last character if multiple are entered
+            codeDigits[index] = value.Substring(value.Length - 1);
+            
+            // Move to next input
+            if (index < 5)
+            {
+                await codeInputs[index + 1].FocusAsync();
+            }
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e, int index)
+    {
+        if (e.Key == "Backspace" && string.IsNullOrEmpty(codeDigits[index]) && index > 0)
+        {
+            // Move to previous input on backspace if current is empty
+            await codeInputs[index - 1].FocusAsync();
+        }
+    }
+
+    private async Task HandleResetPassword()
+    {
+        var code = string.Join("", codeDigits);
+        if (code.Length < 6)
+        {
+            errorMessage = "Please enter the full 6-digit code.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewPassword))
+        {
+            errorMessage = "Please enter a new password.";
+            return;
+        }
+
+        if (NewPassword != ConfirmPassword)
+        {
+            errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = "";
+        StateHasChanged();
+
+        var success = await UserService.ResetPasswordAsync(Email!, code, NewPassword);
+
+        isProcessing = false;
+
+        if (success)
+        {
+            isVerified = true;
+            StateHasChanged();
+            await NavigateAfterDelay();
+        }
+        else
+        {
+            errorMessage = "Failed to reset password. The code may be invalid or expired.";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void StartPolling()
+    {
+        pollingTimer = new Timer(5000); // Check every 5 seconds
+        pollingTimer.Elapsed += async (sender, e) => await CheckVerificationStatus();
+        pollingTimer.Start();
+        
+        // Also do an immediate check
+        _ = CheckVerificationStatus();
+    }
+
+    private async Task CheckVerificationStatus()
+    {
+        if (isVerified || string.IsNullOrEmpty(Email))
+            return;
+
+        pollAttempts++;
+        
+        // Stop polling after max attempts
+        if (pollAttempts > MaxPollAttempts)
+        {
+            pollingTimer?.Stop();
+            await InvokeAsync(() => {
+                errorMessage = "Verification timeout. Please try again.";
+                StateHasChanged();
+            });
+            return;
+        }
+
+        try
+        {
+            isChecking = true;
+            await InvokeAsync(StateHasChanged);
+            
+            var result = await UserService.CheckEmailVerificationStatusAsync(Email);
+            
+            await InvokeAsync(() => {
+                if (result.IsVerified)
+                {
+                    isVerified = true;
+                    isChecking = false;
+                    pollingTimer?.Stop();
+                    errorMessage = "";
+                    StateHasChanged();
+                    
+                    // Navigate to login after a short delay to show success
+                    _ = NavigateAfterDelay();
+                }
+                else
+                {
+                    isChecking = false;
+                    StateHasChanged();
+                }
+            });
+        }
+        catch
+        {
+            await InvokeAsync(() => {
+                isChecking = false;
+                StateHasChanged();
+            });
+        }
+    }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ParentEmail { get; set; }
+
+    private async Task NavigateAfterDelay()
+    {
+        await Task.Delay(3000); // Show success for 3 seconds to ensure user sees it
+        await InvokeAsync(() => {
+            if (!string.IsNullOrEmpty(ParentEmail))
+            {
+                TransitionService.RequestTransition($"/parentalconsent?parentEmail={Uri.EscapeDataString(ParentEmail)}&studentEmail={Uri.EscapeDataString(Email!)}", GateSale.Services.TransitionType.SlideLeft);
+            }
+            else
+            {
+                TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.SlideLeft);
+            }
+        });
+    }
+
+    private async Task ManualCheck()
+    {
+        isChecking = true;
+        errorMessage = "";
+        StateHasChanged();
+        
+        await CheckVerificationStatus();
+        
+        if (!isVerified)
+        {
+            errorMessage = "Email not verified yet. Please click the verify button in your email.";
+        }
+        
+        isChecking = false;
+        StateHasChanged();
+    }
+
+    private async Task OpenEmailApp()
+    {
+        try
+        {
+            // Try to open the default email app
+            await Launcher.Default.OpenAsync("mailto:");
+        }
+        catch
+        {
+            // If it fails, just continue - user can manually open email
+        }
+    }
+
+    private void GoBack()
+    {
+        var backRoute = Mode == "register" ? "/signup" : "/forgot-password";
+        TransitionService.RequestTransition(backRoute, GateSale.Services.TransitionType.SlideRight);
+    }
+
+    public void Dispose()
+    {
+        pollingTimer?.Stop();
+        pollingTimer?.Dispose();
+    }
+}

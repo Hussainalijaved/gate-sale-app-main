@@ -1,0 +1,201 @@
+@inject NavigationManager NavigationManager
+@inject GateSale.Services.PageTransitionService TransitionService
+@implements IDisposable
+
+<div class="transition-container @_transitionClass">
+    @ChildContent
+</div>
+
+<style>
+    .transition-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    .fade-out {
+        animation: fadeOut 0.3s ease forwards;
+    }
+
+    .slide-left-in {
+        animation: slideLeftIn 0.3s ease forwards;
+    }
+
+    .slide-left-out {
+        animation: slideLeftOut 0.3s ease forwards;
+    }
+
+    .slide-right-in {
+        animation: slideRightIn 0.3s ease forwards;
+    }
+
+    .slide-right-out {
+        animation: slideRightOut 0.3s ease forwards;
+    }
+
+    .slide-up-in {
+        animation: slideUpIn 0.3s ease forwards;
+    }
+
+    .slide-up-out {
+        animation: slideUpOut 0.3s ease forwards;
+    }
+
+    .slide-down-in {
+        animation: slideDownIn 0.3s ease forwards;
+    }
+
+    .slide-down-out {
+        animation: slideDownOut 0.3s ease forwards;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    @@keyframes slideLeftIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    @@keyframes slideLeftOut {
+        from { transform: translateX(0); }
+        to { transform: translateX(-100%); }
+    }
+
+    @@keyframes slideRightIn {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+    }
+
+    @@keyframes slideRightOut {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+    }
+
+    @@keyframes slideUpIn {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    @@keyframes slideUpOut {
+        from { transform: translateY(0); }
+        to { transform: translateY(-100%); }
+    }
+
+    @@keyframes slideDownIn {
+        from { transform: translateY(-100%); }
+        to { transform: translateY(0); }
+    }
+
+    @@keyframes slideDownOut {
+        from { transform: translateY(0); }
+        to { transform: translateY(100%); }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public required RenderFragment ChildContent { get; set; }
+
+    private string _transitionClass = "fade-in";
+    private string _currentUrl = string.Empty;
+    private bool _isTransitioning = false;
+
+    protected override void OnInitialized()
+    {
+        _currentUrl = NavigationManager.Uri;
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        TransitionService.OnTransitionRequested += HandleTransitionRequested;
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (_isTransitioning || e.Location == _currentUrl)
+            return;
+
+        _currentUrl = e.Location;
+        StateHasChanged();
+    }
+
+    private async void HandleTransitionRequested(string targetRoute, GateSale.Services.TransitionType transitionType)
+    {
+        try
+        {
+            if (_isTransitioning)
+                return;
+
+            _isTransitioning = true;
+
+            // Apply exit animation
+            _transitionClass = GetExitTransitionClass(transitionType);
+            StateHasChanged();
+
+            // Wait for animation to complete
+            await Task.Delay(300);
+
+            // Navigate to the target route
+            NavigationManager.NavigateTo(targetRoute, false);
+
+            // Apply entry animation
+            _transitionClass = GetEntryTransitionClass(transitionType);
+            StateHasChanged();
+
+            // Reset after transition completes
+            await Task.Delay(300);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Transition error: {ex.Message}");
+            // Fallback to direct navigation without animation
+            NavigationManager.NavigateTo(targetRoute, false);
+        }
+        finally
+        {
+            _isTransitioning = false;
+        }
+    }
+
+    private string GetExitTransitionClass(GateSale.Services.TransitionType transitionType)
+    {
+        return transitionType switch
+        {
+            GateSale.Services.TransitionType.Fade => "fade-out",
+            GateSale.Services.TransitionType.SlideLeft => "slide-left-out",
+            GateSale.Services.TransitionType.SlideRight => "slide-right-out",
+            GateSale.Services.TransitionType.SlideUp => "slide-up-out",
+            GateSale.Services.TransitionType.SlideDown => "slide-down-out",
+            _ => "fade-out"
+        };
+    }
+
+    private string GetEntryTransitionClass(GateSale.Services.TransitionType transitionType)
+    {
+        return transitionType switch
+        {
+            GateSale.Services.TransitionType.Fade => "fade-in",
+            GateSale.Services.TransitionType.SlideLeft => "slide-left-in",
+            GateSale.Services.TransitionType.SlideRight => "slide-right-in",
+            GateSale.Services.TransitionType.SlideUp => "slide-up-in",
+            GateSale.Services.TransitionType.SlideDown => "slide-down-in",
+            _ => "fade-in"
+        };
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+        TransitionService.OnTransitionRequested -= HandleTransitionRequested;
+    }
+}

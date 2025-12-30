@@ -1,0 +1,1308 @@
+@page "/home2"
+@inject NavigationManager Navigation
+@inject FavoriteService FavoriteService
+@inject IProductService ProductService
+@inject ISchoolService SchoolService
+@inject IUserService UserService
+@inject ICategoryService CategoryService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using System.Linq
+@using GateSale.Services
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+
+<div class="marketplace-container">
+    <!-- Modern Header with Gradient Background -->
+    <div class="modern-header">
+        <div class="header-top">
+            <div class="welcome-section">
+                <div class="greeting">
+                    <h1 class="main-title">Discover Amazing Items</h1>
+                    <p class="subtitle">Find exactly what you need for your studies</p>
+                </div>
+                <div class="logo-container">
+                    <img src="/images/gatesale_logo.png" alt="GateSale" class="header-logo" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Search Section -->
+        <div class="search-container">
+            <div class="search-wrapper">
+                <div class="search-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="search-icon">
+                        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <input type="text" placeholder="Search for textbooks, electronics, supplies..." class="modern-search-input" @bind="searchQuery" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <!-- Modern Category Pills -->
+        <div class="category-pills">
+            <div class="pills-container">
+                @foreach (var category in categories)
+                {
+                    <button class="category-pill @(activeTab == category.Name ? "active" : "")" @onclick="@(() => SetActiveTab(category.Name))">
+                        <span>@category.DisplayName</span>
+                    </button>
+                }
+                <button class="category-pill @(activeTab == "Recents" ? "active" : "")" @onclick="@(() => SetActiveTab("Recents"))">
+                    <span>Recent</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Area with New Design -->
+    <div class="content-wrapper">
+        <!-- Hero Featured Section -->
+        <div class="hero-section">
+            <div class="hero-header">
+                <h2 class="hero-title">Trending Now</h2>
+                <button class="hero-action" @onclick="SeeAll">
+                    <span>Explore All</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="hero-scroll">
+                @foreach (var item in filteredTrendingItems)
+                {
+                    <div class="hero-item" @onclick="() => NavigateToProductDetails(item.Id)">
+                        <div class="hero-image">
+                            <img src="@item.ImageUrl" alt="@item.Title" /> 
+                        </div>
+                        <div class="hero-info">
+                            <h3>@item.Title</h3>
+                            <p class="hero-price">@item.Price</p>
+                            <p class="hero-desc">@item.Details</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Categories Strip -->
+        <div class="categories-strip">
+            <div class="strip-header">
+                <h3>Category</h3>
+                <button class="strip-action" @onclick="SeeAllCategories">View All</button>
+            </div>
+            
+            <div class="strip-items">
+                @foreach (var category in categories.Take(4))
+                {
+                     <div class="strip-item" @onclick="@(() => NavigateToCategory(category.Name))">
+                         <div class="strip-icon" style="background-color: @(category.Color)20">
+                             <span style="font-size: 24px;">@category.IconEmoji</span>
+                         </div>
+                         <span class="strip-label">@category.DisplayName</span>
+                     </div>
+                }
+            </div>
+        </div>
+
+        <!-- Listings Feed -->
+        <div class="feed-section">
+            <div class="feed-header">
+                <h3>Latest Listings</h3>
+
+            </div>
+
+            <div class="feed-list">
+                @foreach (var listing in recentListings)
+                {
+                    <div class="feed-item">
+                        <div class="feed-image">
+                            <img src="@listing.ImageUrl" alt="@listing.Title" />
+                            <button class="feed-favorite @(FavoriteService.IsFavorite(listing.Id) ? "active" : "")"
+                                    @onclick="() => ToggleFavorite(listing)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z" fill="currentColor"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="feed-content">
+                            <div class="feed-meta">
+                                <h4>@listing.Title</h4>
+                                <div class="feed-tags">
+                                    @if (listing.IsVerified)
+                                    {
+                                        <span class="feed-tag verified">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Verified
+                                        </span>
+                                    }
+                                    @if (listing.HasSameCourse)
+                                    {
+                                        <span class="feed-tag course">Same Course</span>
+                                    }
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(listing.Price))
+                            {
+                                <p class="feed-price">@listing.Price</p>
+                            }
+                            <p class="feed-desc">@listing.Details</p>
+                            <div class="feed-actions">
+                                <button class="feed-btn primary" @onclick="View">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    View
+                                </button>
+                                <button class="feed-btn secondary">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M3 3H21L19 12H5L3 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M9 21C9.55228 21 10 20.5523 10 20C10 19.4477 9.55228 19 9 19C8.44772 19 8 19.4477 8 20C8 20.5523 8.44772 21 9 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M20 21C20.5523 21 21 20.5523 21 20C21 19.4477 20.5523 19 20 19C19.4477 19 19 19.4477 19 20C19 20.5523 19.4477 21 20 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    Buy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    @if (showFilterModal)
+    {
+        <div class="filter-modal-overlay" @onclick="CloseFilterModal">
+            <div class="filter-modal" @onclick:stopPropagation="true">
+                <div class="filter-header">
+                    <h3>Filters</h3>
+                    <button class="close-btn" @onclick="CloseFilterModal">×</button>
+                </div>
+
+                <div class="filter-content">
+                    <!-- Price Range Filter -->
+                    <div class="filter-section">
+                        <h4>Price Range</h4>
+                        <div class="price-inputs">
+                            <input type="number" placeholder="Min" @bind="minPrice" class="price-input" />
+                            <span class="price-separator">-</span>
+                            <input type="number" placeholder="Max" @bind="maxPrice" class="price-input" />
+                        </div>
+                    </div>
+
+                    <!-- Condition Filter -->
+                    <div class="filter-section">
+                        <h4>Condition</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterNew" />
+                                <span>New</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterLikeNew" />
+                                <span>Like New</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGood" />
+                                <span>Good</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterFair" />
+                                <span>Fair</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Grade Level Filter -->
+                    <div class="filter-section">
+                        <h4>Grade Level</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade9" />
+                                <span>Grade 9</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade10" />
+                                <span>Grade 10</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade11" />
+                                <span>Grade 11</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade12" />
+                                <span>Grade 12</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="clear-btn" @onclick="ClearFilters">Clear All</button>
+                    <button class="apply-btn" @onclick="ApplyFilters">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+<style>
+    .marketplace-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        <!-- background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); -->
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        padding-bottom: 80px;
+        text-align: left;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+
+    /* Modern Header Styles */
+    .modern-header {
+        background: linear-gradient(135deg, #3ABEF9 0%, #00BFFF 100%);
+        padding: 16px 20px 20px 20px;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 20px rgba(58, 190, 249, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        pointer-events: none;
+    }
+
+    .header-top {
+        position: relative;
+        z-index: 2;
+    }
+
+    .welcome-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .greeting h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 6px 0;
+        line-height: 1.2;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .greeting p {
+        font-size: 14px;
+        font-style: italic;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-logo {
+        height: 50px;
+        width: auto;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+        transition: all 0.3s ease;
+    }
+
+    .logo-container:hover .header-logo {
+        transform: scale(1.05);
+        filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    /* Enhanced Search Section */
+    .search-container {
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 3px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .search-icon-wrapper {
+        padding: 10px 14px;
+        color: #6B7280;
+    }
+
+    .modern-search-input {
+        flex: 1;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 13px;
+        color: #374151;
+        padding: 10px 0;
+    }
+
+    .modern-search-input::placeholder {
+        color: #9CA3AF;
+        font-weight: 500;
+    }
+
+
+    /* Modern Category Pills */
+    .category-pills {
+        position: relative;
+        z-index: 2;
+    }
+
+    .pills-container {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 2px 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .pills-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .category-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 8px 16px;
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .category-pill:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .category-pill.active {
+        background: rgba(255, 255, 255, 0.95);
+        color: #3ABEF9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+
+    /* Content Wrapper */
+    .content-wrapper {
+        flex: 1;
+        padding: 20px 16px 20px 16px;
+        background: transparent;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        margin-bottom: 24px;
+    }
+
+    .hero-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .hero-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: black;
+        margin: 0;
+        background-clip: text;
+    }
+
+    .hero-action {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(58, 190, 249, 0.3);
+    }
+
+    .hero-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(58, 190, 249, 0.4);
+    }
+
+    .hero-scroll {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px 0 12px 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .hero-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hero-item {
+        flex-shrink: 0;
+        width: 160px;
+        height: 190px;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;    
+        transition: all 0.3s ease;
+        border: 1px solid rgba(58, 190, 249, 0.1);
+    }
+
+    .hero-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(58, 190, 249, 0.15);
+        border-color: #3ABEF9;
+    }
+
+    .hero-image {
+        position: relative;
+        height: 100px;
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .hero-item:hover .hero-image img {
+        transform: scale(1.05);
+    }
+
+    .hero-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .hero-info {
+        padding: 12px;
+    }
+
+    .hero-info h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .hero-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin: 0 0 4px 0;
+    }
+
+    .hero-desc {
+        font-size: 11px;
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Categories Strip */
+    .categories-strip {
+        margin-bottom: 24px;
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(58, 190, 249, 0.1);
+    }
+
+    .strip-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .strip-header h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .strip-action {
+        background: none;
+        border: 1px solid #3ABEF9;
+        color: #3ABEF9;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .strip-action:hover {
+        background: #3ABEF9;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    .strip-items {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .strip-items::-webkit-scrollbar {
+        display: none;
+    }
+
+    .strip-item {
+        flex-shrink: 0;
+        width: 70px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 12px 6px;
+        border-radius: 12px;
+    }
+
+    .strip-item:hover {
+        background: rgba(58, 190, 249, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .strip-icon {
+        width: 44px;
+        height: 44px;
+        background: #F8FAFC;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px auto;
+        transition: all 0.3s ease;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .strip-item:hover .strip-icon {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(58, 190, 249, 0.15);
+        border-color: #3ABEF9;
+    }
+
+    .strip-icon.textbooks {
+        background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+        border-color: #4ADE80;
+    }
+
+    .strip-icon.electronics {
+        background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+        border-color: #3ABEF9;
+    }
+
+    .strip-icon.clothing {
+        background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+        border-color: #FF6B6B;
+    }
+
+    .strip-icon.supplies {
+        background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+        border-color: #F59E0B;
+    }
+
+    .strip-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 3px;
+    }
+
+    .strip-count {
+        display: block;
+        font-size: 9px;
+        color: #6B7280;
+        font-weight: 500;
+    }
+
+    /* Feed Section */
+    .feed-section {
+        margin-bottom: 24px;
+    }
+
+    .feed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .feed-header h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+
+    .filter-chip {
+        background: #F3F4F6;
+        border: none;
+        color: #6B7280;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .filter-chip.active {
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        color: white;
+    }
+
+    .filter-chip:hover:not(.active) {
+        background: #E5E7EB;
+        color: #374151;
+    }
+
+    .feed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .feed-item {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(58, 190, 249, 0.1);
+    }
+
+    .feed-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(58, 190, 249, 0.12);
+        border-color: rgba(58, 190, 249, 0.2);
+    }
+
+    .feed-image {
+        position: relative;
+        height: 140px;
+        overflow: hidden;
+    }
+
+    .feed-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .feed-item:hover .feed-image img {
+        transform: scale(1.05);
+    }
+
+    .feed-favorite {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: none;
+    }
+
+    .feed-favorite:hover {
+        background: white;
+        transform: scale(1.05);
+    }
+
+    .feed-favorite.active {
+        color: #EF4444;
+    }
+
+    .feed-favorite:not(.active) {
+        color: #D1D5DB;
+    }
+
+    .feed-content {
+        padding: 16px;
+    }
+
+    .feed-meta {
+        margin-bottom: 8px;
+    }
+
+    .feed-meta h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+    }
+
+    .feed-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .feed-tag {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 6px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .feed-tag.verified {
+        background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+        color: #059669;
+    }
+
+    .feed-tag.course {
+        background: linear-gradient(135deg, #E0E7FF, #C7D2FE);
+        color: #3730A3;
+    }
+
+    .feed-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin: 0 0 6px 0;
+    }
+
+    .feed-desc {
+        font-size: 13px;
+        color: #6B7280;
+        margin: 0 0 12px 0;
+        line-height: 1.4;
+    }
+
+    .feed-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .feed-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .feed-btn.primary {
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        color: white;
+        box-shadow: 0 2px 8px rgba(58, 190, 249, 0.3);
+    }
+
+    .feed-btn.primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(58, 190, 249, 0.4);
+    }
+
+    .feed-btn.secondary {
+        background: white;
+        color: #3ABEF9;
+        border: 1px solid #3ABEF9;
+    }
+
+    .feed-btn.secondary:hover {
+        background: #3ABEF9;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    /* Filter Modal Styles */
+    .filter-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 1000;
+        padding-bottom: 80px;
+        backdrop-filter: blur(4px);
+    }
+
+    .filter-modal {
+        background: white;
+        border-radius: 24px 24px 0 0;
+        width: 100%;
+        max-width: 375px;
+        max-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(0);
+        transition: transform 0.3s ease-out;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 24px 20px 24px;
+        border-bottom: 1px solid #E5E7EB;
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: #1F2937;
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .close-btn {
+        background: #F3F4F6;
+        border: none;
+        font-size: 20px;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+        background: #E5E7EB;
+        color: #374151;
+        transform: scale(1.05);
+    }
+
+    .filter-content {
+        padding: 24px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .filter-section {
+        margin-bottom: 32px;
+    }
+
+    .filter-section h4 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1F2937;
+    }
+
+    .price-inputs {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .price-input {
+        flex: 1;
+        padding: 16px 20px;
+        border: 2px solid #E5E7EB;
+        border-radius: 12px;
+        font-size: 16px;
+        text-align: center;
+        background-color: #F9FAFB;
+        transition: all 0.3s ease;
+    }
+
+    .price-input:focus {
+        outline: none;
+        border-color: #3ABEF9;
+        background-color: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
+    }
+
+    .price-separator {
+        color: #9CA3AF;
+        font-weight: 600;
+        font-size: 18px;
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        cursor: pointer;
+        font-size: 16px;
+        color: #374151;
+        padding: 16px 20px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: #F9FAFB;
+        border: 2px solid transparent;
+    }
+
+    .filter-option:hover {
+        background: #E5E7EB;
+        border-color: #3ABEF9;
+    }
+
+    .filter-option input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #3ABEF9;
+        cursor: pointer;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 16px;
+        padding: 24px;
+        border-top: 1px solid #E5E7EB;
+        flex-shrink: 0;
+        background: white;
+    }
+
+    .clear-btn, .apply-btn {
+        flex: 1;
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .clear-btn {
+        background: #F3F4F6;
+        color: #6B7280;
+        border: 2px solid #E5E7EB;
+    }
+
+    .clear-btn:hover {
+        background: #E5E7EB;
+        color: #374151;
+        transform: translateY(-2px);
+    }
+
+    .apply-btn {
+        background: linear-gradient(135deg, #3ABEF9, #00BFFF);
+        color: white;
+        box-shadow: 0 4px 16px rgba(58, 190, 249, 0.3);
+    }
+
+    .apply-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(58, 190, 249, 0.4);
+    }
+</style>
+@code{
+    // Tab functionality
+    private string activeTab = "";
+
+    private async Task SetActiveTab(string tabName)
+    {
+        activeTab = tabName;
+        await FilterItems();
+    }
+
+    private void NavigateToProductDetails(string trendingId)
+    {
+        // For user-created products, the trending ID is the same as product detail ID
+        // For original products, we need to map them
+        string productDetailId;
+
+        if (trendingId.StartsWith("user_product_"))
+        {
+            // User-created product - use the ID directly
+            productDetailId = trendingId;
+        }
+        else
+        {
+            // Original product - use mapping
+            productDetailId = ProductService.GetProductDetailIdFromTrendingId(trendingId);
+        }
+
+        // Navigate to PageDetails with the product ID
+        TransitionService.RequestTransition($"/pagedetails/{productDetailId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void NavigateToCategory(string category)
+    {
+        // Navigate to shop page with category filter
+        TransitionService.RequestTransition($"/shop?category={category}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+
+    // Search functionality
+    private string _searchQuery = "";
+    private string searchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            _searchQuery = value;
+            _ = FilterItems();
+        }
+    }
+    private List<TrendingItem> allTrendingItems = new();
+    private List<TrendingItem> filteredTrendingItems = new();
+    private List<RecentListing> recentListings = new();
+    private List<Category> categories = new();
+
+    // Filter modal
+    private bool showFilterModal = false;
+
+    // Filter options
+    private decimal? minPrice = null;
+    private decimal? maxPrice = null;
+    private bool filterNew = false;
+    private bool filterLikeNew = false;
+    private bool filterGood = false;
+    private bool filterFair = false;
+    private bool filterGrade9 = false;
+    private bool filterGrade10 = false;
+    private bool filterGrade11 = false;
+    private bool filterGrade12 = false;
+
+    private bool HasActiveFilters =>
+        minPrice.HasValue || maxPrice.HasValue ||
+        filterNew || filterLikeNew || filterGood || filterFair ||
+        filterGrade9 || filterGrade10 || filterGrade11 || filterGrade12;
+
+    // Using Models.TrendingItem and Models.RecentListing from services
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load selling categories - these match what products are created with
+        var sellingCategories = await CategoryService.GetSellingCategoriesAsync();
+        categories = sellingCategories.Select(sc => new Category
+        {
+            Id = sc.Id,
+            Name = sc.Name,
+            DisplayName = sc.DisplayName,
+            IconEmoji = sc.IconEmoji,
+            Color = sc.Color,
+            IsActive = sc.IsActive,
+            SortOrder = sc.SortOrder
+        }).ToList();
+        
+        allTrendingItems = await ProductService.GetTrendingItemsAsync();
+        filteredTrendingItems = allTrendingItems.ToList();
+        recentListings = await ProductService.GetRecentListingsAsync();
+    }
+
+
+    private async Task FilterItems()
+    {
+        var filter = new ProductFilter
+        {
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
+            SearchTerm = searchQuery,
+            Category = activeTab == "Recents" ? null : activeTab,
+            Conditions = new List<string>(),
+            Grades = new List<string>()
+        };
+
+        if (filterNew) filter.Conditions.Add("New");
+        if (filterLikeNew) filter.Conditions.Add("Like New");
+        if (filterGood) filter.Conditions.Add("Good");
+        if (filterFair) filter.Conditions.Add("Fair");
+
+        if (filterGrade9) filter.Grades.Add("Grade 9");
+        if (filterGrade10) filter.Grades.Add("Grade 10");
+        if (filterGrade11) filter.Grades.Add("Grade 11");
+        if (filterGrade12) filter.Grades.Add("Grade 12");
+
+        filteredTrendingItems = await ProductService.GetFilteredTrendingItemsAsync(filter);
+        StateHasChanged();
+    }
+
+    private void ToggleFilterModal()
+    {
+        showFilterModal = !showFilterModal;
+    }
+
+    private void CloseFilterModal()
+    {
+        showFilterModal = false;
+    }
+
+    private void ClearFilters()
+    {
+        minPrice = null;
+        maxPrice = null;
+        filterNew = false;
+        filterLikeNew = false;
+        filterGood = false;
+        filterFair = false;
+        filterGrade9 = false;
+        filterGrade10 = false;
+        filterGrade11 = false;
+        filterGrade12 = false;
+        FilterItems();
+    }
+
+    private void ApplyFilters()
+    {
+        FilterItems();
+        CloseFilterModal();
+    }
+
+    private void ToggleFavorite(RecentListing listing)
+    {
+        var favoriteItem = new FavoriteItem
+        {
+            Id = listing.Id,
+            Title = listing.Title,
+            Price = listing.Price,
+            Details = listing.Details,
+            ImageUrl = listing.ImageUrl,
+            IsVerified = listing.IsVerified,
+            Rating = listing.Rating
+        };
+
+        FavoriteService.ToggleFavorite(favoriteItem);
+        StateHasChanged();
+    }
+
+    private void GoToFavorites()
+    {
+        TransitionService.RequestTransition("/favorites", GateSale.Services.TransitionType.Fade);
+    }
+
+    private void Sell()
+    {
+        TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.Fade);
+    }
+    private void Shop()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.Fade);
+    }
+    private void Profile()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.Fade);
+    }
+    private void SeeAll()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void SeeAllCategories()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+    private void View()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+}

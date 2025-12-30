@@ -1,0 +1,723 @@
+@page "/add-photos-videos"
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject ProductCreationService ProductCreationService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using Microsoft.JSInterop
+@using GateSale.Services
+
+<div class="add-photos-container">
+    <!-- Header -->
+    <div class="header-section">
+        <button class="btn-back positioned" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Add Photos or Videos</h1>
+    </div>
+
+    <!-- Header Separator Line -->
+    <div class="header-separator"></div>
+
+    <!-- Main Content Section -->
+    <div class="main-content-section">
+        <!-- Camera Illustration -->
+        <div class="camera-illustration">
+            <img src="/images/camera.png" alt="Camera" class="camera-image" />
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+        <div class="upload-options">
+            <button class="upload-option" @onclick="OpenCamera">
+                <div class="option-icon ">
+                        <svg width="90" height="112" viewBox="0 0 90 112" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g filter="url(#filter0_d_2_827)">
+                                <path d="M2.90625 13C2.90625 6.37258 8.27883 1 14.9062 1H75.0938C81.7212 1 87.0938 6.37258 87.0938 13V97C87.0938 103.627 81.7212 109 75.0938 109H14.9062C8.27883 109 2.90625 103.627 2.90625 97V13Z" fill="white" />
+                                <path d="M45 17C58.2548 17 69 27.7452 69 41C69 54.2548 58.2548 65 45 65C31.7452 65 21 54.2548 21 41C21 27.7452 31.7452 17 45 17Z" fill="#3ABEF9" />
+                                <path d="M45 17C58.2548 17 69 27.7452 69 41C69 54.2548 58.2548 65 45 65C31.7452 65 21 54.2548 21 41C21 27.7452 31.7452 17 45 17Z" stroke="#E5E7EB" />
+                                <path d="M40.8242 33.0313L40.418 34.25H37.5C36.1211 34.25 35 35.3711 35 36.75V46.75C35 48.1289 36.1211 49.25 37.5 49.25H52.5C53.8789 49.25 55 48.1289 55 46.75V36.75C55 35.3711 53.8789 34.25 52.5 34.25H49.582L49.1758 33.0313C48.9219 32.2656 48.207 31.75 47.3984 31.75H42.6016C41.793 31.75 41.0781 32.2656 40.8242 33.0313ZM45 38C45.9946 38 46.9484 38.3951 47.6517 39.0983C48.3549 39.8016 48.75 40.7554 48.75 41.75C48.75 42.7446 48.3549 43.6984 47.6517 44.4017C46.9484 45.1049 45.9946 45.5 45 45.5C44.0054 45.5 43.0516 45.1049 42.3483 44.4017C41.6451 43.6984 41.25 42.7446 41.25 41.75C41.25 40.7554 41.6451 39.8016 42.3483 39.0983C43.0516 38.3951 44.0054 38 45 38Z" fill="white" />
+                                <path d="M28.9161 80.0293H27.365C27.3053 79.6978 27.1943 79.4061 27.0319 79.1543C26.8695 78.9024 26.6706 78.6886 26.4353 78.5129C26.2 78.3373 25.9365 78.2047 25.6448 78.1152C25.3564 78.0257 25.0499 77.981 24.7251 77.981C24.1384 77.981 23.6131 78.1285 23.1491 78.4234C22.6884 78.7184 22.3238 79.1509 22.0553 79.721C21.7902 80.2911 21.6576 80.9871 21.6576 81.8091C21.6576 82.6377 21.7902 83.337 22.0553 83.9071C22.3238 84.4772 22.69 84.908 23.154 85.1997C23.618 85.4914 24.1401 85.6372 24.7201 85.6372C25.0416 85.6372 25.3465 85.5941 25.6349 85.5079C25.9265 85.4185 26.19 85.2875 26.4253 85.1152C26.6607 84.9428 26.8595 84.7324 27.0219 84.4838C27.1876 84.2319 27.302 83.9436 27.365 83.6187L28.9161 83.6237C28.8332 84.1242 28.6725 84.5849 28.4339 85.0058C28.1985 85.4234 27.8953 85.7847 27.5241 86.0896C27.1562 86.3912 26.7352 86.6249 26.2613 86.7906C25.7873 86.9563 25.2703 87.0392 24.7101 87.0392C23.8285 87.0392 23.043 86.8304 22.3536 86.4128C21.6642 85.9918 21.1206 85.3903 20.7229 84.6081C20.3285 83.8259 20.1313 82.8929 20.1313 81.8091C20.1313 80.722 20.3302 79.789 20.7279 79.0101C21.1256 78.2279 21.6692 77.628 22.3586 77.2104C23.048 76.7894 23.8318 76.579 24.7101 76.579C25.2504 76.579 25.7542 76.6569 26.2215 76.8126C26.6921 76.9651 27.1147 77.1905 27.4893 77.4888C27.8638 77.7838 28.1737 78.145 28.4189 78.5726C28.6642 78.9968 28.8299 79.4824 28.9161 80.0293ZM32.8573 87.069C32.3734 87.069 31.9359 86.9795 31.5448 86.8006C31.1537 86.6183 30.8438 86.3548 30.6151 86.0101C30.3898 85.6654 30.2771 85.2428 30.2771 84.7423C30.2771 84.3115 30.3599 83.9568 30.5257 83.6784C30.6914 83.4 30.9151 83.1796 31.1968 83.0172C31.4785 82.8548 31.7934 82.7321 32.1414 82.6493C32.4894 82.5664 32.8441 82.5035 33.2053 82.4604C33.6627 82.4073 34.0339 82.3642 34.319 82.3311C34.604 82.2946 34.8112 82.2366 34.9404 82.1571C35.0697 82.0776 35.1343 81.9483 35.1343 81.7693V81.7345C35.1343 81.3003 35.0117 80.9639 34.7664 80.7253C34.5245 80.4866 34.1632 80.3673 33.6826 80.3673C33.1821 80.3673 32.7877 80.4784 32.4994 80.7004C32.2143 80.9192 32.0171 81.1628 31.9078 81.4312L30.5107 81.1131C30.6765 80.649 30.9184 80.2745 31.2366 79.9895C31.5581 79.7011 31.9276 79.4923 32.3453 79.3631C32.7629 79.2305 33.202 79.1642 33.6627 79.1642C33.9677 79.1642 34.2908 79.2007 34.6322 79.2736C34.9769 79.3432 35.2984 79.4724 35.5967 79.6614C35.8983 79.8503 36.1452 80.1204 36.3374 80.4717C36.5297 80.8197 36.6258 81.2722 36.6258 81.829V86.9H35.1741V85.856H35.1144C35.0183 86.0482 34.8741 86.2371 34.6819 86.4227C34.4897 86.6083 34.2427 86.7624 33.9411 86.8851C33.6395 87.0077 33.2783 87.069 32.8573 87.069ZM33.1805 85.8758C33.5915 85.8758 33.9428 85.7946 34.2345 85.6322C34.5294 85.4698 34.7532 85.2577 34.9056 84.9959C35.0614 84.7307 35.1393 84.4473 35.1393 84.1457V83.1614C35.0863 83.2144 34.9835 83.2641 34.8311 83.3105C34.6819 83.3536 34.5112 83.3917 34.319 83.4249C34.1267 83.4547 33.9395 83.4829 33.7572 83.5094C33.5749 83.5326 33.4224 83.5525 33.2998 83.569C33.0115 83.6055 32.748 83.6668 32.5093 83.753C32.274 83.8392 32.0851 83.9634 31.9426 84.1258C31.8034 84.2849 31.7338 84.4971 31.7338 84.7622C31.7338 85.1301 31.8696 85.4085 32.1414 85.5974C32.4132 85.783 32.7596 85.8758 33.1805 85.8758ZM38.6057 86.9V79.2636H40.0326V80.5065H40.127C40.2861 80.0856 40.5463 79.7575 40.9076 79.5222C41.2689 79.2835 41.7014 79.1642 42.2052 79.1642C42.7156 79.1642 43.1431 79.2835 43.4878 79.5222C43.8358 79.7608 44.0927 80.0889 44.2584 80.5065H44.338C44.5203 80.0989 44.8103 79.774 45.208 79.5321C45.6057 79.2868 46.0797 79.1642 46.6299 79.1642C47.3226 79.1642 47.8877 79.3813 48.3252 79.8155C48.766 80.2497 48.9864 80.9043 48.9864 81.7793V86.9H47.4999V81.9185C47.4999 81.4014 47.3591 81.0269 47.0773 80.7949C46.7956 80.5629 46.4592 80.4469 46.0681 80.4469C45.5842 80.4469 45.208 80.596 44.9395 80.8943C44.6711 81.1893 44.5368 81.5688 44.5368 82.0328V86.9H43.0553V81.824C43.0553 81.4097 42.926 81.0766 42.6675 80.8247C42.409 80.5728 42.0726 80.4469 41.6583 80.4469C41.3766 80.4469 41.1164 80.5214 40.8778 80.6706C40.6424 80.8164 40.4519 81.0203 40.306 81.2821C40.1635 81.5439 40.0922 81.8472 40.0922 82.1919V86.9H38.6057ZM54.27 87.0541C53.5176 87.0541 52.8696 86.8934 52.3261 86.5719C51.7858 86.2471 51.3682 85.7913 51.0732 85.2047C50.7816 84.6147 50.6357 83.9237 50.6357 83.1315C50.6357 82.3493 50.7816 81.6599 51.0732 81.0633C51.3682 80.4668 51.7792 80.0011 52.3062 79.6663C52.8365 79.3316 53.4563 79.1642 54.1656 79.1642C54.5964 79.1642 55.0141 79.2355 55.4184 79.378C55.8228 79.5205 56.1857 79.7442 56.5072 80.0491C56.8287 80.3541 57.0822 80.7501 57.2678 81.2374C57.4535 81.7213 57.5463 82.3096 57.5463 83.0023V83.5293H51.4759V82.4156H56.0896C56.0896 82.0245 56.01 81.6782 55.8509 81.3766C55.6919 81.0716 55.4681 80.8313 55.1798 80.6557C54.8947 80.48 54.56 80.3922 54.1755 80.3922C53.7579 80.3922 53.3933 80.4949 53.0818 80.7004C52.7735 80.9026 52.5349 81.1677 52.3659 81.4959C52.2001 81.8207 52.1173 82.1737 52.1173 82.5548V83.4249C52.1173 83.9353 52.2068 84.3695 52.3857 84.7274C52.568 85.0854 52.8216 85.3588 53.1464 85.5477C53.4712 85.7333 53.8507 85.8261 54.2849 85.8261C54.5666 85.8261 54.8235 85.7864 55.0555 85.7068C55.2875 85.624 55.488 85.5013 55.657 85.3389C55.8261 85.1765 55.9553 84.976 56.0448 84.7374L57.4518 84.9909C57.3391 85.4052 57.1369 85.7681 56.8453 86.0797C56.5569 86.3879 56.194 86.6282 55.7565 86.8006C55.3223 86.9696 54.8268 87.0541 54.27 87.0541ZM59.1956 86.9V79.2636H60.6324V80.4767H60.7119C60.8511 80.0657 61.0964 79.7426 61.4477 79.5072C61.8023 79.2686 62.2034 79.1493 62.6508 79.1493C62.7436 79.1493 62.853 79.1526 62.979 79.1592C63.1082 79.1659 63.2093 79.1741 63.2822 79.1841V80.606C63.2226 80.5894 63.1165 80.5712 62.964 80.5513C62.8116 80.5281 62.6591 80.5165 62.5067 80.5165C62.1553 80.5165 61.8421 80.591 61.567 80.7402C61.2952 80.886 61.0798 81.0899 60.9207 81.3517C60.7616 81.6102 60.6821 81.9052 60.6821 82.2366V86.9H59.1956ZM66.7226 87.069C66.2387 87.069 65.8012 86.9795 65.4101 86.8006C65.019 86.6183 64.7091 86.3548 64.4804 86.0101C64.255 85.6654 64.1423 85.2428 64.1423 84.7423C64.1423 84.3115 64.2252 83.9568 64.3909 83.6784C64.5566 83.4 64.7803 83.1796 65.0621 83.0172C65.3438 82.8548 65.6586 82.7321 66.0067 82.6493C66.3547 82.5664 66.7093 82.5035 67.0706 82.4604C67.528 82.4073 67.8992 82.3642 68.1842 82.3311C68.4693 82.2946 68.6764 82.2366 68.8057 82.1571C68.9349 82.0776 68.9996 81.9483 68.9996 81.7693V81.7345C68.9996 81.3003 68.8769 80.9639 68.6317 80.7253C68.3897 80.4866 68.0284 80.3673 67.5479 80.3673C67.0474 80.3673 66.653 80.4784 66.3646 80.7004C66.0796 80.9192 65.8824 81.1628 65.773 81.4312L64.376 81.1131C64.5417 80.649 64.7836 80.2745 65.1018 79.9895C65.4233 79.7011 65.7929 79.4923 66.2105 79.3631C66.6281 79.2305 67.0673 79.1642 67.528 79.1642C67.8329 79.1642 68.156 79.2007 68.4974 79.2736C68.8421 79.3432 69.1636 79.4724 69.4619 79.6614C69.7635 79.8503 70.0104 80.1204 70.2027 80.4717C70.3949 80.8197 70.491 81.2722 70.491 81.829V86.9H69.0393V85.856H68.9797C68.8836 86.0482 68.7394 86.2371 68.5471 86.4227C68.3549 86.6083 68.108 86.7624 67.8064 86.8851C67.5048 87.0077 67.1435 87.069 66.7226 87.069ZM67.0457 85.8758C67.4567 85.8758 67.808 85.7946 68.0997 85.6322C68.3947 85.4698 68.6184 85.2577 68.7709 84.9959C68.9266 84.7307 69.0045 84.4473 69.0045 84.1457V83.1614C68.9515 83.2144 68.8488 83.2641 68.6963 83.3105C68.5471 83.3536 68.3765 83.3917 68.1842 83.4249C67.992 83.4547 67.8047 83.4829 67.6224 83.5094C67.4401 83.5326 67.2877 83.5525 67.165 83.569C66.8767 83.6055 66.6132 83.6668 66.3746 83.753C66.1392 83.8392 65.9503 83.9634 65.8078 84.1258C65.6686 84.2849 65.599 84.4971 65.599 84.7622C65.599 85.1301 65.7349 85.4085 66.0067 85.5974C66.2784 85.783 66.6248 85.8758 67.0457 85.8758Z" fill="#374151" />
+                            </g>
+                            <defs>
+                                <filter id="filter0_d_2_827" x="0.90625" y="0" width="88.1875" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                                    <feOffset dy="1" />
+                                    <feGaussianBlur stdDeviation="1" />
+                                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0" />
+                                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_827" />
+                                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2_827" result="shape" />
+                                </filter>
+                            </defs>
+                        </svg>
+
+
+                </div>
+            </button>
+
+            <button class="upload-option" @onclick="OpenGallery">
+                <div class="option-icon ">
+                        <svg width="85" height="112" viewBox="0 0 85 112" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g filter="url(#filter0_d_2_835)">
+                                <path d="M2.09375 13C2.09375 6.37258 7.46633 1 14.0938 1H70.0938C76.7212 1 82.0938 6.37258 82.0938 13V97C82.0938 103.627 76.7212 109 70.0938 109H14.0937C7.46633 109 2.09375 103.627 2.09375 97V13Z" fill="white" />
+                                <path d="M42.0938 17C55.3486 17 66.0938 27.7452 66.0938 41C66.0938 54.2548 55.3486 65 42.0938 65C28.8389 65 18.0938 54.2548 18.0938 41C18.0938 27.7452 28.8389 17 42.0938 17Z" fill="#3ABEF9" />
+                                <g clip-path="url(#clip0_2_835)">
+                                    <path d="M37.0938 31.75C35.7148 31.75 34.5938 32.8711 34.5938 34.25V43C34.5938 44.3789 35.7148 45.5 37.0938 45.5H50.8438C52.2227 45.5 53.3438 44.3789 53.3438 43V34.25C53.3438 32.8711 52.2227 31.75 50.8438 31.75H37.0938ZM46.3125 35.918L50.0625 41.543C50.2539 41.832 50.2734 42.1992 50.1094 42.5039C49.9453 42.8086 49.6289 43 49.2812 43H43.6562H41.7812H38.6562C38.2969 43 37.9688 42.793 37.8125 42.4688C37.6562 42.1445 37.6992 41.7578 37.9258 41.4766L40.4258 38.3516C40.6055 38.1289 40.8711 38 41.1562 38C41.4414 38 41.7109 38.1289 41.8867 38.3516L42.5625 39.1953L44.75 35.9141C44.9258 35.6563 45.2188 35.5 45.5312 35.5C45.8438 35.5 46.1367 35.6562 46.3125 35.918ZM38.3438 35.5C38.3438 35.1685 38.4754 34.8505 38.7099 34.6161C38.9443 34.3817 39.2622 34.25 39.5938 34.25C39.9253 34.25 40.2432 34.3817 40.4776 34.6161C40.7121 34.8505 40.8438 35.1685 40.8438 35.5C40.8438 35.8315 40.7121 36.1495 40.4776 36.3839C40.2432 36.6183 39.9253 36.75 39.5938 36.75C39.2622 36.75 38.9443 36.6183 38.7099 36.3839C38.4754 36.1495 38.3438 35.8315 38.3438 35.5ZM32.7188 35.1875C32.7188 34.668 32.3008 34.25 31.7812 34.25C31.2617 34.25 30.8438 34.668 30.8438 35.1875V43.9375C30.8438 46.8711 33.2227 49.25 36.1562 49.25H48.6562C49.1758 49.25 49.5938 48.832 49.5938 48.3125C49.5938 47.793 49.1758 47.375 48.6562 47.375H36.1562C34.2578 47.375 32.7188 45.8359 32.7188 43.9375V35.1875Z" fill="white" />
+                                </g>
+                                <path d="M26.809 79.9348C26.7129 79.6332 26.5837 79.3631 26.4213 79.1244C26.2622 78.8825 26.0716 78.677 25.8495 78.5079C25.6275 78.3356 25.3739 78.2047 25.0889 78.1152C24.8071 78.0257 24.4972 77.981 24.1592 77.981C23.5858 77.981 23.0687 78.1285 22.608 78.4234C22.1473 78.7184 21.7828 79.1509 21.5143 79.721C21.2491 80.2878 21.1166 80.9821 21.1166 81.8041C21.1166 82.6294 21.2508 83.3271 21.5193 83.8972C21.7877 84.4672 22.1556 84.8998 22.623 85.1947C23.0903 85.4897 23.6222 85.6372 24.2188 85.6372C24.7723 85.6372 25.2546 85.5245 25.6656 85.2991C26.0799 85.0738 26.3997 84.7556 26.6251 84.3446C26.8538 83.9303 26.9681 83.4431 26.9681 82.8829L27.3659 82.9575H24.4525V81.6898H28.4546V82.8481C28.4546 83.7033 28.2723 84.4457 27.9078 85.0754C27.5465 85.7018 27.046 86.1857 26.4063 86.5271C25.77 86.8685 25.0408 87.0392 24.2188 87.0392C23.2974 87.0392 22.4887 86.8271 21.7927 86.4028C21.1 85.9786 20.5597 85.377 20.172 84.5981C19.7842 83.816 19.5903 82.8879 19.5903 81.8141C19.5903 81.002 19.703 80.2729 19.9284 79.6266C20.1537 78.9802 20.4703 78.4317 20.8779 77.981C21.2889 77.5269 21.7712 77.1805 22.3247 76.9419C22.8815 76.6999 23.4897 76.579 24.1492 76.579C24.6994 76.579 25.2115 76.6602 25.6855 76.8226C26.1627 76.985 26.587 77.2153 26.9582 77.5136C27.3327 77.8119 27.6426 78.1666 27.8879 78.5776C28.1331 78.9852 28.2989 79.4376 28.385 79.9348H26.809ZM32.5077 87.069C32.0238 87.069 31.5863 86.9795 31.1952 86.8006C30.8041 86.6183 30.4942 86.3548 30.2655 86.0101C30.0402 85.6654 29.9275 85.2428 29.9275 84.7423C29.9275 84.3115 30.0103 83.9568 30.176 83.6784C30.3418 83.4 30.5655 83.1796 30.8472 83.0172C31.1289 82.8548 31.4438 82.7321 31.7918 82.6493C32.1398 82.5664 32.4945 82.5035 32.8557 82.4604C33.3131 82.4073 33.6843 82.3642 33.9694 82.3311C34.2544 82.2946 34.4616 82.2366 34.5908 82.1571C34.7201 82.0776 34.7847 81.9483 34.7847 81.7693V81.7345C34.7847 81.3003 34.6621 80.9639 34.4168 80.7253C34.1749 80.4866 33.8136 80.3673 33.333 80.3673C32.8325 80.3673 32.4381 80.4784 32.1498 80.7004C31.8647 80.9192 31.6675 81.1628 31.5581 81.4312L30.1611 81.1131C30.3269 80.649 30.5688 80.2745 30.887 79.9895C31.2085 79.7011 31.578 79.4923 31.9956 79.3631C32.4133 79.2305 32.8524 79.1642 33.3131 79.1642C33.618 79.1642 33.9412 79.2007 34.2826 79.2736C34.6273 79.3432 34.9488 79.4724 35.2471 79.6614C35.5487 79.8503 35.7956 80.1204 35.9878 80.4717C36.1801 80.8197 36.2762 81.2722 36.2762 81.829V86.9H34.8245V85.856H34.7648C34.6687 86.0482 34.5245 86.2371 34.3323 86.4227C34.1401 86.6083 33.8931 86.7624 33.5915 86.8851C33.2899 87.0077 32.9287 87.069 32.5077 87.069ZM32.8309 85.8758C33.2419 85.8758 33.5932 85.7946 33.8849 85.6322C34.1798 85.4698 34.4036 85.2577 34.556 84.9959C34.7118 84.7307 34.7897 84.4473 34.7897 84.1457V83.1614C34.7367 83.2144 34.6339 83.2641 34.4814 83.3105C34.3323 83.3536 34.1616 83.3917 33.9694 83.4249C33.7771 83.4547 33.5899 83.4829 33.4076 83.5094C33.2253 83.5326 33.0728 83.5525 32.9502 83.569C32.6618 83.6055 32.3983 83.6668 32.1597 83.753C31.9244 83.8392 31.7355 83.9634 31.593 84.1258C31.4537 84.2849 31.3841 84.4971 31.3841 84.7622C31.3841 85.1301 31.52 85.4085 31.7918 85.5974C32.0636 85.783 32.4099 85.8758 32.8309 85.8758ZM39.7426 76.7182V86.9H38.2561V76.7182H39.7426ZM43.229 76.7182V86.9H41.7425V76.7182H43.229ZM48.52 87.0541C47.7676 87.0541 47.1196 86.8934 46.5761 86.5719C46.0358 86.2471 45.6182 85.7913 45.3232 85.2047C45.0316 84.6147 44.8857 83.9237 44.8857 83.1315C44.8857 82.3493 45.0316 81.6599 45.3232 81.0633C45.6182 80.4668 46.0292 80.0011 46.5562 79.6663C47.0865 79.3316 47.7063 79.1642 48.4156 79.1642C48.8464 79.1642 49.2641 79.2355 49.6684 79.378C50.0728 79.5205 50.4357 79.7442 50.7572 80.0491C51.0787 80.3541 51.3322 80.7501 51.5178 81.2374C51.7035 81.7213 51.7963 82.3096 51.7963 83.0023V83.5293H45.7259V82.4156H50.3396C50.3396 82.0245 50.26 81.6782 50.1009 81.3766C49.9419 81.0716 49.7181 80.8313 49.4298 80.6557C49.1447 80.48 48.81 80.3922 48.4255 80.3922C48.0079 80.3922 47.6433 80.4949 47.3318 80.7004C47.0235 80.9026 46.7849 81.1677 46.6159 81.4959C46.4501 81.8207 46.3673 82.1737 46.3673 82.5548V83.4249C46.3673 83.9353 46.4568 84.3695 46.6357 84.7274C46.818 85.0854 47.0716 85.3588 47.3964 85.5477C47.7212 85.7333 48.1007 85.8261 48.5349 85.8261C48.8166 85.8261 49.0735 85.7864 49.3055 85.7068C49.5375 85.624 49.738 85.5013 49.907 85.3389C50.0761 85.1765 50.2053 84.976 50.2948 84.7374L51.7018 84.9909C51.5891 85.4052 51.3869 85.7681 51.0953 86.0797C50.8069 86.3879 50.444 86.6282 50.0065 86.8006C49.5723 86.9696 49.0768 87.0541 48.52 87.0541ZM53.4456 86.9V79.2636H54.8824V80.4767H54.9619C55.1011 80.0657 55.3464 79.7426 55.6977 79.5072C56.0523 79.2686 56.4534 79.1493 56.9008 79.1493C56.9936 79.1493 57.103 79.1526 57.229 79.1592C57.3582 79.1659 57.4593 79.1741 57.5322 79.1841V80.606C57.4726 80.5894 57.3665 80.5712 57.214 80.5513C57.0616 80.5281 56.9091 80.5165 56.7567 80.5165C56.4053 80.5165 56.0921 80.591 55.817 80.7402C55.5452 80.886 55.3298 81.0899 55.1707 81.3517C55.0116 81.6102 54.9321 81.9052 54.9321 82.2366V86.9H53.4456ZM59.9907 89.7636C59.7686 89.7636 59.5664 89.7454 59.3841 89.7089C59.2019 89.6758 59.066 89.6393 58.9765 89.5996L59.3344 88.3815C59.6062 88.4544 59.8482 88.4859 60.0603 88.476C60.2724 88.466 60.4597 88.3865 60.6221 88.2374C60.7878 88.0882 60.9336 87.8446 61.0596 87.5065L61.2435 86.9994L58.4495 79.2636H60.0404L61.9743 85.1898H62.0539L63.9878 79.2636H65.5837L62.4367 87.9192C62.2909 88.3169 62.1053 88.6533 61.8799 88.9284C61.6545 89.2068 61.386 89.4156 61.0745 89.5548C60.7629 89.694 60.4017 89.7636 59.9907 89.7636Z" fill="#374151" />
+                            </g>
+                            <defs>
+                                <filter id="filter0_d_2_835" x="0.09375" y="0" width="84" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                                    <feOffset dy="1" />
+                                    <feGaussianBlur stdDeviation="1" />
+                                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0" />
+                                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_835" />
+                                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2_835" result="shape" />
+                                </filter>
+                                <clipPath id="clip0_2_835">
+                                    <path d="M30.8438 30.5H53.3438V50.5H30.8438V30.5Z" fill="white" />
+                                </clipPath>
+                            </defs>
+                        </svg>
+
+
+                </div>
+                
+            </button>
+        </div>
+
+        <!-- Hidden file inputs for camera and gallery -->
+        <input type="file" @ref="cameraInput" accept="image/*" capture="environment" style="display: none;" />
+        <input type="file" @ref="galleryInput" accept="image/*" multiple style="display: none;" />
+
+        <div class="upload-text">
+            <p class="primary-text">Tap to add photos or videos</p>
+            <p class="secondary-text">or drag and drop files here</p>
+        </div>
+        </div>
+
+        <!-- Selected Media Counter -->
+        <div class="media-counter">
+            <span>Selected Media (@selectedFiles.Count/5)</span>
+        </div>
+
+        <!-- Media Grid -->
+        <div class="media-grid">
+            @for (int i = 0; i < 5; i++)
+            {
+                var index = i; // Create local copy to fix closure issue
+                <div class="media-slot @(index < selectedFiles.Count ? "filled" : "empty")" @onclick="() => AddMediaSlot(index)">
+                    @if (index < selectedFiles.Count)
+                    {
+                        <img src="@selectedFiles[index].PreviewUrl" alt="Selected media" class="media-preview" />
+                        <button class="remove-media"
+                                @onclick="@(() => RemoveMedia(index))"
+                                @onclick:stopPropagation="true"
+                                title="Remove image">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="add-media-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V19M5 12H19" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <span>Hold and drag to reorder • Tap X to remove</span>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="tips-section">
+            <div class="tips-header">
+                <svg width="12" height="17" viewBox="0 0 12 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_877)">
+                        <g clip-path="url(#clip1_2_877)">
+                            <path d="M8.5 12.6719C8.8 11.675 9.42188 10.825 10.0375 9.97812C10.2 9.75625 10.3625 9.53438 10.5188 9.30937C11.1375 8.41875 11.5 7.34063 11.5 6.175C11.5 3.13438 9.0375 0.671875 6 0.671875C2.9625 0.671875 0.5 3.13438 0.5 6.17188C0.5 7.3375 0.8625 8.41875 1.48125 9.30625C1.6375 9.53125 1.8 9.75313 1.9625 9.975C2.58125 10.8219 3.20312 11.675 3.5 12.6687H8.5V12.6719ZM6 16.6719C7.38125 16.6719 8.5 15.5531 8.5 14.1719V13.6719H3.5V14.1719C3.5 15.5531 4.61875 16.6719 6 16.6719ZM3.5 6.17188C3.5 6.44688 3.275 6.67188 3 6.67188C2.725 6.67188 2.5 6.44688 2.5 6.17188C2.5 4.2375 4.06562 2.67188 6 2.67188C6.275 2.67188 6.5 2.89687 6.5 3.17188C6.5 3.44688 6.275 3.67188 6 3.67188C4.61875 3.67188 3.5 4.79063 3.5 6.17188Z" fill="#E7B081" />
+                        </g>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_877">
+                            <rect width="12" height="16" fill="white" transform="translate(0 0.671875)" />
+                        </clipPath>
+                        <clipPath id="clip1_2_877">
+                            <path d="M0 0.671875H12V16.6719H0V0.671875Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+                <span class="tips-title">Tips for great photos</span>
+            </div>
+            <ol class="tips-list">
+                <li>Use good lighting</li>
+                <li>Keep images clear and focused</li>
+                <li>Max file size: 10MB each</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer-section">
+        <!-- Next Button -->
+        <button class="btn-base btn-primary btn-next" @onclick="GoNext" disabled="@(selectedFiles.Count == 0)">Next</button>
+    </div>
+</div>
+
+<style>
+    .add-photos-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100vh;
+        background-color: #F8F9FA;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        padding: 20px 20px 16px 20px;
+        background-color: #FFFFFF;
+        position: relative;
+        justify-content: center;
+    }
+
+    .header-separator {
+        height: 1px;
+        background-color: #E5E7EB;
+        width: 100%;
+    }
+
+    .main-content-section {
+        flex: 1;
+        padding: 24px 20px 0 20px;
+        background-color: #F8F9FA;
+    }
+
+    .footer-section {
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-top: 1px solid #E5E7EB;
+    }
+
+
+
+  
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333333;
+        margin: 0;
+    }
+
+    .camera-illustration {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 16px;
+        position: relative;
+    }
+
+    .camera-image {
+        width: 130px;
+        height: 130px;
+        object-fit: contain;
+    }
+
+    .upload-section {
+        background: #EFF6FF80;
+        border: 2px dashed #42A5F5;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .upload-options {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        margin-bottom: 20px;
+    }
+
+    .upload-option {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 12px;
+        min-width: 80px;
+    }
+
+  
+
+  
+
+    .option-icon {
+        width: 80px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        
+    }
+
+    
+
+    .option-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333333;
+    }
+
+    .upload-text {
+        color: #666666;
+    }
+
+    .primary-text {
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0 0 4px 0;
+        color: #333333;
+    }
+
+    .secondary-text {
+        font-size: 14px;
+        margin: 0;
+        color: #9CA3AF;
+    }
+
+    .media-counter {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333333;
+        margin-bottom: 16px;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .media-slot {
+        aspect-ratio: 1;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .media-slot.empty {
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .media-slot.empty:hover {
+        border-color: #42A5F5;
+        background: #F8FAFF;
+    }
+
+    .media-slot.filled {
+        background: #F3F4F6;
+    }
+
+    .media-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .remove-media {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: background 0.2s ease;
+    }
+
+    .remove-media:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    .add-media-icon {
+        color: #9CA3AF;
+    }
+
+    .instructions {
+        text-align: center;
+        font-size: 12px;
+        color: #9CA3AF;
+        margin-bottom: 16px;
+    }
+
+    .tips-section {
+        background: #E7B08133;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+
+    .tips-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .tips-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: black;
+    }
+
+    .tips-list {
+        list-style-type: disc; /* bullet point instead of numbers */
+        padding-left: 1.2em; /* spacing from left */
+        margin-left: 0;
+        font-weight: 400;
+        font-size: 12px;
+    }
+
+        .tips-list li {
+            margin-bottom: 6px; /* optional spacing between items */
+        }
+
+
+
+
+
+</style>
+
+<script>
+    window.triggerFileInput = (element, dotNetHelper) => {
+        if (element) {
+            const captureAttr = element.getAttribute('capture');
+            const inputType = captureAttr ? `Camera` : 'Gallery';
+            console.log('Triggering file input:', inputType);
+
+            // Set up the change handler to process files
+            element.onchange = async (event) => {
+                console.log('Gallery input changed, processing files...');
+                await window.processFileSelection(element, dotNetHelper);
+            };
+
+            element.click();
+        } else {
+            console.error('File input element not found');
+        }
+    };
+
+    window.openAndroidCamera = async (element, dotNetHelper) => {
+        if (element) {
+            console.log('Opening Android camera...');
+
+            // For Android devices, we need to be very explicit about camera access
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            console.log('Is Android device:', isAndroid);
+
+            // Create a completely fresh input element specifically for camera
+            const cameraInput = document.createElement('input');
+            cameraInput.type = 'file';
+            cameraInput.accept = 'image/*';
+
+            // For Android, use capture="environment" for rear camera
+            cameraInput.setAttribute('capture', 'environment');
+
+            // Ensure no multiple attribute (single photo only)
+            cameraInput.removeAttribute('multiple');
+
+            // Hide the input
+            cameraInput.style.display = 'none';
+            cameraInput.style.position = 'absolute';
+            cameraInput.style.left = '-9999px';
+
+            console.log('Camera input created with attributes:', {
+                type: cameraInput.type,
+                accept: cameraInput.accept,
+                capture: cameraInput.getAttribute('capture'),
+                multiple: cameraInput.getAttribute('multiple')
+            });
+
+            // Set up the change handler to process files
+            cameraInput.onchange = async (event) => {
+                console.log('Camera input changed, processing files...');
+                await window.processFileSelection(cameraInput, dotNetHelper);
+            };
+
+            // Add to DOM
+            document.body.appendChild(cameraInput);
+
+            // For Android, add a small delay before triggering
+            setTimeout(() => {
+                console.log('Triggering camera input click...');
+                cameraInput.click();
+            }, 100);
+
+            // Clean up after use
+            setTimeout(() => {
+                if (cameraInput.parentNode) {
+                    console.log('Cleaning up camera input...');
+                    document.body.removeChild(cameraInput);
+                }
+            }, 5000);
+
+        } else {
+            console.error('Camera input element not found');
+        }
+    };
+
+    window.processFileSelection = async (inputElement, dotNetHelper) => {
+        if (inputElement && inputElement.files && inputElement.files.length > 0) {
+            console.log(`Processing ${inputElement.files.length} files...`);
+
+            // Prevent double processing by checking if already processing
+            if (inputElement.dataset.processing === 'true') {
+                console.log('Already processing files, skipping...');
+                return;
+            }
+
+            inputElement.dataset.processing = 'true';
+
+            try {
+                for (let i = 0; i < inputElement.files.length; i++) {
+                    const file = inputElement.files[i];
+                    console.log(`Processing file ${i + 1}/${inputElement.files.length}: ${file.name}`);
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select only image files.');
+                        continue;
+                    }
+
+                    // Validate file size (max 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size must be less than 10MB.');
+                        continue;
+                    }
+
+                    try {
+                        // Convert file to base64
+                        const base64 = await fileToBase64(file);
+                        const base64Data = base64.split(',')[1]; // Remove data:image/...;base64, prefix
+
+                        // Call Blazor method to add file
+                        await dotNetHelper.invokeMethodAsync('AddFileFromJS',
+                            file.name,
+                            base64Data,
+                            file.size,
+                            file.type
+                        );
+
+                        console.log(`Successfully processed file: ${file.name}`);
+                    } catch (error) {
+                        console.error('Error processing file:', error);
+                        alert('Error processing file: ' + file.name);
+                    }
+                }
+            } finally {
+                // Clear the input so the same file can be selected again
+                inputElement.value = '';
+                inputElement.dataset.processing = 'false';
+                console.log('File processing completed');
+            }
+        }
+    };
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+
+</script>
+
+@code {
+    private List<MediaFile> selectedFiles = new List<MediaFile>();
+    private ElementReference cameraInput;
+    private ElementReference galleryInput;
+
+    public class MediaFile
+    {
+        public string Name { get; set; } = "";
+        public string PreviewUrl { get; set; } = "";
+        public string Base64Data { get; set; } = "";
+        public long Size { get; set; }
+        public string ContentType { get; set; } = "";
+    }
+
+    protected override void OnInitialized()
+    {
+        // Clear any existing files when page loads (session management)
+        selectedFiles.Clear();
+        Console.WriteLine("AddPhotosOrVideos page initialized");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Console.WriteLine("AddPhotosOrVideos first render completed");
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private async Task OpenCamera()
+    {
+        if (selectedFiles.Count < 5)
+        {
+            try
+            {
+                Console.WriteLine("Opening Android camera...");
+                await JSRuntime.InvokeVoidAsync("openAndroidCamera", cameraInput, DotNetObjectReference.Create(this));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening camera: {ex.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Maximum number of files (5) already selected");
+        }
+    }
+
+    private async Task OpenGallery()
+    {
+        if (selectedFiles.Count < 5)
+        {
+            try
+            {
+                Console.WriteLine("Opening gallery...");
+                await JSRuntime.InvokeVoidAsync("triggerFileInput", galleryInput, DotNetObjectReference.Create(this));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening gallery: {ex.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Maximum number of files (5) already selected");
+        }
+    }
+
+
+
+    [JSInvokable]
+    public void AddFileFromJS(string fileName, string base64Data, long fileSize, string contentType)
+    {
+        Console.WriteLine($"AddFileFromJS called: fileName={fileName}, fileSize={fileSize}, contentType={contentType}, selectedFiles.Count={selectedFiles.Count}");
+
+        if (selectedFiles.Count < 5 && !string.IsNullOrEmpty(base64Data))
+        {
+            var mediaFile = new MediaFile
+            {
+                Name = fileName,
+                PreviewUrl = $"data:{contentType};base64,{base64Data}",
+                Base64Data = base64Data,
+                Size = fileSize,
+                ContentType = contentType
+            };
+
+            selectedFiles.Add(mediaFile);
+            Console.WriteLine($"File added successfully. Total files: {selectedFiles.Count}");
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine($"File not added. Reason: selectedFiles.Count={selectedFiles.Count}, base64Data.IsEmpty={string.IsNullOrEmpty(base64Data)}");
+        }
+    }
+
+
+
+    private async Task AddMediaSlot(int index)
+    {
+        if (index >= selectedFiles.Count && selectedFiles.Count < 5)
+        {
+            // Open gallery by default when clicking empty slot
+            await OpenGallery();
+        }
+    }
+
+    private void RemoveMedia(int index)
+    {
+        Console.WriteLine($"RemoveMedia called with index: {index}, selectedFiles.Count: {selectedFiles.Count}");
+
+        if (selectedFiles != null && index >= 0 && index < selectedFiles.Count)
+        {
+            var removedFile = selectedFiles[index];
+            selectedFiles.RemoveAt(index);
+            Console.WriteLine($"Successfully removed file: {removedFile.Name}, remaining files: {selectedFiles.Count}");
+            StateHasChanged();
+        }
+        else
+        {
+            Console.WriteLine($"Invalid removal attempt - index: {index}, selectedFiles.Count: {selectedFiles?.Count ?? 0}");
+        }
+    }
+
+    private void NextStep()
+    {
+        if (selectedFiles.Count > 0)
+        {
+            TransitionService.RequestTransition("/set-your-price", GateSale.Services.TransitionType.SlideLeft);
+        }
+    }
+
+    private void GoNext()
+    {
+        if (selectedFiles.Count > 0)
+        {
+            // Save photos to ProductCreationService
+            ProductCreationService.SetPhotos(selectedFiles);
+            TransitionService.RequestTransition("/buyers-help", GateSale.Services.TransitionType.SlideLeft);
+        }
+    }
+}

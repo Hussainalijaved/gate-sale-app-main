@@ -1,0 +1,225 @@
+@page "/checkinbox"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+<div class="check-inbox-container">
+    <!-- Mailbox Image -->
+    <div class="illustration-section">
+        <svg width="320" height="257" viewBox="0 0 320 257" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M167.988 161.117H248.012C251.878 161.117 255.012 164.251 255.012 168.117V216.133C255.012 219.999 251.878 223.133 248.012 223.133H167.988C164.122 223.133 160.988 219.999 160.988 216.133V168.117L160.997 167.757C161.185 164.058 164.243 161.117 167.988 161.117Z" fill="#F3F4F6" />
+            <path d="M167.988 161.117H248.012C251.878 161.117 255.012 164.251 255.012 168.117V216.133C255.012 219.999 251.878 223.133 248.012 223.133H167.988C164.122 223.133 160.988 219.999 160.988 216.133V168.117L160.997 167.757C161.185 164.058 164.243 161.117 167.988 161.117Z" stroke="#D1D5DB" stroke-width="2" />
+            <path d="M246.02 162.112C250.438 162.112 254.02 165.698 254.02 170.116H161.98C161.98 165.698 165.562 162.112 169.98 162.112H246.02Z" fill="#D1D5DB" />
+            <path d="M246.02 162.112C250.438 162.112 254.02 165.698 254.02 170.116H161.98C161.98 165.698 165.562 162.112 169.98 162.112H246.02Z" stroke="#E5E7EB" />
+            <g clip-path="url(#clip0_2_620)">
+                <g clip-path="url(#clip1_2_620)">
+                    <path d="M202.721 190.874C201.572 190.874 200.571 191.656 200.293 192.77L198.064 201.681C198.013 201.881 197.99 202.084 197.99 202.287V205.889C197.99 207.269 199.112 208.391 200.492 208.391H215.507C216.887 208.391 218.01 207.269 218.01 205.889V202.287C218.01 202.084 217.986 201.881 217.935 201.681L215.707 192.77C215.429 191.656 214.428 190.874 213.278 190.874H202.721ZM202.721 193.376H213.278L215.155 200.884H213.153C212.68 200.884 212.246 201.15 212.035 201.576L211.476 202.694C211.265 203.116 210.831 203.386 210.358 203.386H205.646C205.173 203.386 204.739 203.12 204.528 202.694L203.969 201.576C203.757 201.153 203.323 200.884 202.85 200.884H200.844L202.721 193.376Z" fill="#6B7280" />
+                </g>
+            </g>
+            <g opacity="0.108663">
+                <path d="M138.647 55.3899C139.101 55.3901 139.469 55.7577 139.469 56.2112C139.469 56.6649 139.101 57.0332 138.647 57.0334H87.6992C87.2456 57.0332 86.8779 56.6649 86.8779 56.2112C86.8782 55.7577 87.2457 55.3901 87.6992 55.3899H138.647Z" fill="#4ADE80" />
+                <path d="M138.647 55.3899C139.101 55.3901 139.469 55.7577 139.469 56.2112C139.469 56.6649 139.101 57.0332 138.647 57.0334H87.6992C87.2456 57.0332 86.8779 56.6649 86.8779 56.2112C86.8782 55.7577 87.2457 55.3901 87.6992 55.3899H138.647Z" stroke="#E5E7EB" />
+            </g>
+            <path d="M146 74.125C146.552 74.125 147 74.5727 147 75.125C147 75.6773 146.552 76.125 146 76.125H100C99.4477 76.125 99 75.6773 99 75.125C99 74.5727 99.4477 74.125 100 74.125H146Z" fill="#4ADE80" />
+            <path d="M146 74.125C146.552 74.125 147 74.5727 147 75.125C147 75.6773 146.552 76.125 146 76.125H100C99.4477 76.125 99 75.6773 99 75.125C99 74.5727 99.4477 74.125 100 74.125H146Z" stroke="#E5E7EB" />
+            <path d="M178 84.125C178.552 84.125 179 84.5727 179 85.125C179 85.6773 178.552 86.125 178 86.125H100C99.4477 86.125 99 85.6773 99 85.125C99 84.5727 99.4477 84.125 100 84.125H178Z" fill="#4ADE80" />
+            <path d="M178 84.125C178.552 84.125 179 84.5727 179 85.125C179 85.6773 178.552 86.125 178 86.125H100C99.4477 86.125 99 85.6773 99 85.125C99 84.5727 99.4477 84.125 100 84.125H178Z" stroke="#E5E7EB" />
+            <g filter="url(#filter0_dd_2_620)">
+                <path d="M123 52.125C123 49.9159 124.791 48.125 127 48.125H151C153.209 48.125 155 49.9159 155 52.125V68.125C155 70.3341 153.209 72.125 151 72.125H127C124.791 72.125 123 70.3341 123 68.125V52.125Z" fill="white" />
+                <path d="M127 49.125H151C152.657 49.125 154 50.4681 154 52.125V68.125C154 69.7819 152.657 71.125 151 71.125H127C125.343 71.125 124 69.7819 124 68.125V52.125C124 50.4681 125.343 49.125 127 49.125Z" stroke="#3ABEF9" stroke-width="2" />
+                <path d="M149 50.125C151.209 50.125 153 51.9159 153 54.125H125C125 51.9159 126.791 50.125 129 50.125H149Z" fill="#3ABEF9" />
+                <path d="M149 50.125C151.209 50.125 153 51.9159 153 54.125H125C125 51.9159 126.791 50.125 129 50.125H149Z" stroke="#E5E7EB" />
+            </g>
+            <g filter="url(#filter1_dd_2_620)">
+                <path d="M159.94 23.6906C159.94 19.2723 163.522 15.6906 167.94 15.6906H280.059C284.478 15.6906 288.059 19.2723 288.059 23.6906V103.849C288.059 108.267 284.478 111.849 280.059 111.849H167.94C163.522 111.849 159.94 108.267 159.94 103.849V23.6906Z" fill="#3ABEF9" />
+            </g>
+            <path d="M288.63 3.3722C293.048 3.3722 296.63 6.95392 296.63 11.3722V77.1046H161.418V11.3722C161.418 6.95393 165 3.3722 169.418 3.3722H288.63Z" fill="#3B82F6" />
+            <path d="M288.63 3.3722C293.048 3.3722 296.63 6.95392 296.63 11.3722V77.1046H161.418V11.3722C161.418 6.95393 165 3.3722 169.418 3.3722H288.63Z" stroke="#E5E7EB" />
+            <g filter="url(#filter2_d_2_620)">
+                <path d="M167.932 43.5425C167.932 41.3334 169.723 39.5425 171.932 39.5425H276.041C278.25 39.5425 280.041 41.3334 280.041 43.5425V99.7329C280.041 101.942 278.25 103.733 276.041 103.733H171.932C169.723 103.733 167.932 101.942 167.932 99.7329V43.5425Z" fill="white" />
+                <path d="M171.932 40.0425H276.04C277.973 40.0425 279.54 41.6095 279.54 43.5425V99.7329C279.54 101.666 277.973 103.233 276.04 103.233H171.932C169.999 103.233 168.432 101.666 168.432 99.7329V43.5425C168.432 41.6095 169.999 40.0425 171.932 40.0425Z" stroke="#BFDBFE" />
+                <path d="M268.938 48.4716C270.093 48.4719 271.029 49.4083 271.029 50.5634C271.029 51.7187 270.093 52.656 268.938 52.6562H179.113C177.958 52.6561 177.021 51.7188 177.021 50.5634C177.022 49.4082 177.958 48.4718 179.113 48.4716H268.938Z" fill="#D1D5DB" />
+                <path d="M268.938 48.4716C270.093 48.4719 271.029 49.4083 271.029 50.5634C271.029 51.7187 270.093 52.656 268.938 52.6562H179.113C177.958 52.6561 177.021 51.7188 177.021 50.5634C177.022 49.4082 177.958 48.4718 179.113 48.4716H268.938Z" stroke="#E5E7EB" />
+                <path d="M245.436 56.3789C246.584 56.3789 247.515 57.3099 247.515 58.458C247.515 59.606 246.584 60.5371 245.436 60.5371H179.086C177.938 60.5371 177.007 59.606 177.007 58.458C177.007 57.3099 177.938 56.3789 179.086 56.3789H245.436Z" fill="#D1D5DB" />
+                <path d="M245.436 56.3789C246.584 56.3789 247.515 57.3099 247.515 58.458C247.515 59.606 246.584 60.5371 245.436 60.5371H179.086C177.938 60.5371 177.007 59.606 177.007 58.458C177.007 57.3099 177.938 56.3789 179.086 56.3789H245.436Z" stroke="#E5E7EB" />
+                <path d="M221.945 64.3787C223.078 64.3787 223.998 65.2978 223.998 66.4315C223.997 67.565 223.078 68.4842 221.945 68.4842H179.042C177.908 68.4842 176.989 67.565 176.989 66.4315C176.989 65.2978 177.908 64.3787 179.042 64.3787H221.945Z" fill="#D1D5DB" />
+                <path d="M221.945 64.3787C223.078 64.3787 223.998 65.2978 223.998 66.4315C223.997 67.565 223.078 68.4842 221.945 68.4842H179.042C177.908 68.4842 176.989 67.565 176.989 66.4315C176.989 65.2978 177.908 64.3787 179.042 64.3787H221.945Z" stroke="#E5E7EB" />
+            </g>
+            <g clip-path="url(#clip2_2_620)">
+                <g clip-path="url(#clip3_2_620)">
+                    <path d="M267.388 25.9333C266.661 25.9333 266.072 26.5228 266.072 27.2495C266.072 27.6636 266.266 28.0529 266.598 28.3025L272.565 32.7777C272.878 33.0108 273.306 33.0108 273.618 32.7777L279.585 28.3025C279.917 28.0529 280.112 27.6636 280.112 27.2495C280.112 26.5228 279.522 25.9333 278.795 25.9333H267.388ZM266.072 29.0045V34.7082C266.072 35.6762 266.859 36.4632 267.827 36.4632H278.357C279.325 36.4632 280.112 35.6762 280.112 34.7082V29.0045L274.145 33.4797C273.519 33.9486 272.664 33.9486 272.039 33.4797L266.072 29.0045Z" fill="white" />
+                </g>
+            </g>
+            <defs>
+                <filter id="filter0_dd_2_620" x="108" y="43.125" width="62" height="54" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset dy="10" />
+                    <feGaussianBlur stdDeviation="7.5" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0" />
+                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_620" />
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset dy="4" />
+                    <feGaussianBlur stdDeviation="3" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0" />
+                    <feBlend mode="normal" in2="effect1_dropShadow_2_620" result="effect2_dropShadow_2_620" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_2_620" result="shape" />
+                </filter>
+                <filter id="filter1_dd_2_620" x="134.94" y="10.6906" width="178.119" height="146.159" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset dy="20" />
+                    <feGaussianBlur stdDeviation="12.5" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0" />
+                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_620" />
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset dy="8" />
+                    <feGaussianBlur stdDeviation="5" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0" />
+                    <feBlend mode="normal" in2="effect1_dropShadow_2_620" result="effect2_dropShadow_2_620" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_2_620" result="shape" />
+                </filter>
+                <filter id="filter2_d_2_620" x="163.932" y="37.5425" width="120.109" height="72.1904" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                    <feOffset dy="2" />
+                    <feGaussianBlur stdDeviation="2" />
+                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0" />
+                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_620" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2_620" result="shape" />
+                </filter>
+                <clipPath id="clip0_2_620">
+                    <rect width="20.0197" height="20.0197" fill="white" transform="translate(197.99 189.623)" />
+                </clipPath>
+                <clipPath id="clip1_2_620">
+                    <path d="M197.99 189.623H218.01V209.642H197.99V189.623Z" fill="white" />
+                </clipPath>
+                
+                <clipPath id="clip3_2_620">
+                    <path d="M266.072 24.1783H280.112V38.2181H266.072V24.1783Z" fill="white" />
+                </clipPath>
+            </defs>
+        </svg>
+
+    </div>
+
+    <!-- Content section -->
+    <div class="content-section">
+        <h1 class="main-title">Check Your Inbox</h1>
+        <p class="description">
+            We've sent you a verification email.<br>
+            Please check your inbox and click the<br>
+            link to verify your account.
+        </p>
+    </div>
+
+    <!-- Button section -->
+    <div class="button-section">
+        <button class="email-client-button" @onclick="OpenEmailClient">
+            Resend Email
+        </button>
+    </div>
+
+    <!-- Footer section -->
+    <div class="footer-section">
+        <p class="footer-text">
+            Didn't receive the email? Check your spam folder
+        </p>
+    </div>
+</div>
+
+<style>
+    .check-inbox-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FFFFFF;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        gap: 0;
+    }
+
+    .illustration-section {
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .mailbox-image {
+        width: 200px;
+        height: 160px;
+        object-fit: contain;
+    }
+
+    .content-section {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .main-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 20px 0;
+        line-height: 1.2;
+    }
+
+    .description {
+        font-size: 16px;
+        color: #666666;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .button-section {
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 24px;
+    }
+
+    .email-client-button {
+        width: 100%;
+        height: 50px;
+        background-color: #00BFFF;
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 6px rgba(0, 191, 255, 0.3);
+    }
+
+    .email-client-button:hover {
+        background-color: #0099CC;
+        box-shadow: 0 4px 8px rgba(0, 191, 255, 0.4);
+    }
+
+        
+
+    .footer-section {
+        margin-top: 16px;
+        padding-top: 0;
+    }
+
+    .footer-text {
+        font-size: 14px;
+        color: #999999;
+        text-align: center;
+        margin: 0;
+        line-height: 1.4;
+        max-width: 280px;
+    }
+</style>
+
+@code {
+    private void OpenEmailClient()
+    {
+        TransitionService.RequestTransition("/parentalconsent", GateSale.Services.TransitionType.SlideLeft);
+    }
+}

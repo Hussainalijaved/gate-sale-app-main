@@ -1,0 +1,320 @@
+/* GateSale Centralized Component CSS System */
+
+/* =============================================================================
+   BUTTON SYSTEM
+   ============================================================================= */
+
+/* Base Button Styles */
+.btn-base {
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.btn-base.with-icon {
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-base.with-icon svg {
+    margin-top: 2px;
+}
+
+/* Primary Action Buttons (Next, Login, Submit, etc.) */
+.btn-primary {
+    background-color: #00BFFF;
+    color: white;
+    border-radius: 15px;
+    font-size: 16px;
+    box-shadow: 0 3px 6px rgba(0, 191, 255, 0.3);
+}
+
+
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    background-color: #E5E7EB;
+    color: #9CA3AF;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Next Button Variants */
+.btn-next {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px;
+    height: 50px;
+    border-radius: 15px;
+}
+
+.btn-next-large {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px;
+    height: 55px;
+    border-radius: 15px;
+}
+
+.btn-next-compact {
+    width: 100%;
+    padding: 14px 20px;
+    height: 48px;
+    border-radius: 15px;
+}
+
+/* Next Button State Variants */
+.btn-next.enabled {
+    background-color: #3ABEF9;
+    color: white;
+    cursor: pointer;
+}
+
+
+
+.btn-next.disabled {
+    background-color: #B3E5FC;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: not-allowed;
+}
+
+/* Back Button Styles */
+.btn-back {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 8px;
+    line-height: 0;
+    transition: background-color 0.2s ease;
+}
+
+
+.btn-back.positioned {
+    position: absolute;
+    left: 20px;
+}
+
+/* Secondary Action Buttons */
+.btn-secondary {
+    background-color: white;
+    color: #666666;
+    border: 1px solid #E5E7EB;
+    border-radius: 15px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+
+/* Special Button Variants */
+.btn-consent {
+    background-color: #00BFFF;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0, 191, 255, 0.3);
+}
+
+.btn-list {
+    background-color: #00BFFF;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(58, 190, 249, 0.3);
+}
+
+/* =============================================================================
+   LAYOUT SYSTEM
+   ============================================================================= */
+
+/* Mobile Container Base */
+.mobile-container-base {
+    max-width: 375px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #FFFFFF;
+    min-height: 100vh;
+}
+
+/* Page Layout Patterns */
+.page-layout-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 20px 20px 20px;
+    justify-content: flex-start;
+}
+
+.page-layout-full {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 80px;
+}
+
+/* Header Sections */
+.header-section-base {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #FFFFFF;
+}
+
+.header-section-with-back {
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+/* Navigation Sections */
+.navigation-section-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 40px;
+    width: 100%;
+    max-width: 320px;
+}
+
+/* Button Sections */
+.button-section-base {
+    padding: 0 20px;
+    margin-bottom: 20px;
+}
+
+.button-section-full-width {
+    width: 100%;
+    max-width: 320px;
+}
+
+/* =============================================================================
+   TYPOGRAPHY SYSTEM
+   ============================================================================= */
+
+/* Main Titles */
+.title-main {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.2;
+}
+
+.title-page {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0;
+}
+
+/* Text Variants */
+.text-skip {
+    font-size: 16px;
+    color: #999;
+    margin: 0;
+    cursor: pointer;
+}
+
+.text-disclaimer {
+    font-size: 12px;
+    color: #999;
+    margin: 0;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.text-help {
+    font-size: 13px;
+    color: #9CA3AF;
+    margin: 0;
+}
+
+/* =============================================================================
+   UTILITY CLASSES
+   ============================================================================= */
+
+/* Spacing Utilities */
+.spacing-section {
+    margin-bottom: 32px;
+}
+
+.spacing-large-top {
+    margin-top: 280px;
+}
+
+.spacing-medium-top {
+    margin-top: 60px;
+}
+
+.spacing-bottom {
+    margin-bottom: 24px;
+}
+
+.spacing-auto-top {
+    margin-top: auto;
+}
+
+/* Shadow Utilities */
+.shadow-soft {
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.shadow-button {
+    box-shadow: 0 3px 6px rgba(0, 191, 255, 0.3);
+}
+
+.shadow-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Border Radius Utilities */
+.rounded-standard {
+    border-radius: 12px;
+}
+
+.rounded-button {
+    border-radius: 15px;
+}
+
+.rounded-large {
+    border-radius: 16px;
+}
+
+/* Color Utilities */
+.bg-primary {
+    background-color: #00BFFF;
+}
+
+.bg-secondary {
+    background-color: #f9f9f9;
+}
+
+.text-primary {
+    color: #000000;
+}
+
+.text-secondary {
+    color: #666666;
+}
+
+.text-muted {
+    color: #9CA3AF;
+}

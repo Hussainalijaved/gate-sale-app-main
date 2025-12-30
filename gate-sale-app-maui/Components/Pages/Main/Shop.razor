@@ -1,0 +1,593 @@
+@page "/shop"
+@inject NavigationManager Navigation
+@inject IProductService ProductService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using System.Linq
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Web
+<div class="shop-container">
+    <!-- Header -->
+    <div class="header">
+        <h1 class="page-title">Shop</h1>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <div class="search-bar">
+            <div class="search-icon">
+                <svg width="16" height="24" viewBox="0 0 16 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_1185)">
+                        <path d="M13 9.5C13 10.9344 12.5344 12.2594 11.75 13.3344L15.7063 17.2937C16.0969 17.6844 16.0969 18.3188 15.7063 18.7094C15.3156 19.1 14.6812 19.1 14.2906 18.7094L10.3344 14.75C9.25938 15.5375 7.93437 16 6.5 16C2.90937 16 0 13.0906 0 9.5C0 5.90937 2.90937 3 6.5 3C10.0906 3 13 5.90937 13 9.5ZM6.5 14C7.09095 14 7.67611 13.8836 8.22208 13.6575C8.76804 13.4313 9.26412 13.0998 9.68198 12.682C10.0998 12.2641 10.4313 11.768 10.6575 11.2221C10.8836 10.6761 11 10.0909 11 9.5C11 8.90905 10.8836 8.32389 10.6575 7.77792C10.4313 7.23196 10.0998 6.73588 9.68198 6.31802C9.26412 5.90016 8.76804 5.56869 8.22208 5.34254C7.67611 5.1164 7.09095 5 6.5 5C5.90905 5 5.32389 5.1164 4.77792 5.34254C4.23196 5.56869 3.73588 5.90016 3.31802 6.31802C2.90016 6.73588 2.56869 7.23196 2.34254 7.77792C2.1164 8.32389 2 8.90905 2 9.5C2 10.0909 2.1164 10.6761 2.34254 11.2221C2.56869 11.768 2.90016 12.2641 3.31802 12.682C3.73588 13.0998 4.23196 13.4313 4.77792 13.6575C5.32389 13.8836 5.90905 14 6.5 14Z" fill="#9CA3AF" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_1185">
+                            <path d="M0 3H16V19H0V3Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+            </div>
+            <input type="text" placeholder="Search textbooks, supplies, electronics..." class="search-input" @bind="searchQuery" @bind:event="oninput" />
+            <div class="filter-icon @(HasActiveFilters ? "active-filter" : "")" @onclick="ToggleFilterModal">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_1192)">
+                        <path d="M0 13C0 13.5531 0.446875 14 1 14H2.70937C3.09375 14.8844 3.975 15.5 5 15.5C6.025 15.5 6.90625 14.8844 7.29063 14H15C15.5531 14 16 13.5531 16 13C16 12.4469 15.5531 12 15 12H7.29063C6.90625 11.1156 6.025 10.5 5 10.5C3.975 10.5 3.09375 11.1156 2.70937 12H1C0.446875 12 0 12.4469 0 13ZM4 13C4 12.7348 4.10536 12.4804 4.29289 12.2929C4.48043 12.1054 4.73478 12 5 12C5.26522 12 5.51957 12.1054 5.70711 12.2929C5.89464 12.4804 6 12.7348 6 13C6 13.2652 5.89464 13.5196 5.70711 13.7071C5.51957 13.8946 5.26522 14 5 14C4.73478 14 4.48043 13.8946 4.29289 13.7071C4.10536 13.5196 4 13.2652 4 13ZM10 8C10 7.73478 10.1054 7.48043 10.2929 7.29289C10.4804 7.10536 10.7348 7 11 7C11.2652 7 11.5196 7.10536 11.7071 7.29289C11.8946 7.48043 12 7.73478 12 8C12 8.26522 11.8946 8.51957 11.7071 8.70711C11.5196 8.89464 11.2652 9 11 9C10.7348 9 10.4804 8.89464 10.2929 8.70711C10.1054 8.51957 10 8.26522 10 8ZM11 5.5C9.975 5.5 9.09375 6.11562 8.70938 7H1C0.446875 7 0 7.44688 0 8C0 8.55313 0.446875 9 1 9H8.70938C9.09375 9.88437 9.975 10.5 11 10.5C12.025 10.5 12.9062 9.88437 13.2906 9H15C15.5531 9 16 8.55313 16 8C16 7.44688 15.5531 7 15 7H13.2906C12.9062 6.11562 12.025 5.5 11 5.5ZM6 4C5.73478 4 5.48043 3.89464 5.29289 3.70711C5.10536 3.51957 5 3.26522 5 3C5 2.73478 5.10536 2.48043 5.29289 2.29289C5.48043 2.10536 5.73478 2 6 2C6.26522 2 6.51957 2.10536 6.70711 2.29289C6.89464 2.48043 7 2.73478 7 3C7 3.26522 6.89464 3.51957 6.70711 3.70711C6.51957 3.89464 6.26522 4 6 4ZM8.29062 2C7.90625 1.11563 7.025 0.5 6 0.5C4.975 0.5 4.09375 1.11563 3.70937 2H1C0.446875 2 0 2.44687 0 3C0 3.55312 0.446875 4 1 4H3.70937C4.09375 4.88438 4.975 5.5 6 5.5C7.025 5.5 7.90625 4.88438 8.29062 4H15C15.5531 4 16 3.55312 16 3C16 2.44687 15.5531 2 15 2H8.29062Z" fill="#3ABEF9" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_1192">
+                            <path d="M0 0H16V16H0V0Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @foreach (var product in filteredProducts)
+        {
+            <div class="product-card" @onclick="@(() => NavigateToProductDetails(product.Id))">
+                <div class="product-image">
+                    <img src="@product.ImageUrl" alt="@product.Name" class="product-img" />
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">@product.Name</h3>
+                    <p class="product-price">@product.Price</p>
+                </div>
+            </div>
+        }
+    </div>
+    <!-- Filter Modal -->
+    @if (showFilterModal)
+    {
+        <div class="filter-modal-overlay" @onclick="CloseFilterModal">
+            <div class="filter-modal" @onclick:stopPropagation="true">
+                <div class="filter-header">
+                    <h3>Filters</h3>
+                    <button class="close-btn" @onclick="CloseFilterModal">�</button>
+                </div>
+
+                <div class="filter-content">
+                    <!-- Price Range Filter -->
+                    <div class="filter-section">
+                        <h4>Price Range</h4>
+                        <div class="price-inputs">
+                            <input type="number" placeholder="Min" @bind="minPrice" class="price-input" />
+                            <span class="price-separator">-</span>
+                            <input type="number" placeholder="Max" @bind="maxPrice" class="price-input" />
+                        </div>
+                    </div>
+
+                    <!-- Condition Filter -->
+                    <div class="filter-section">
+                        <h4>Condition</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterNew" />
+                                <span>New</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterLikeNew" />
+                                <span>Like New</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGood" />
+                                <span>Good</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterFair" />
+                                <span>Fair</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Grade Level Filter -->
+                    <div class="filter-section">
+                        <h4>Grade Level</h4>
+                        <div class="filter-options">
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade9" />
+                                <span>Grade 9</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade10" />
+                                <span>Grade 10</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade11" />
+                                <span>Grade 11</span>
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" @bind="filterGrade12" />
+                                <span>Grade 12</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="clear-btn" @onclick="ClearFilters">Clear All</button>
+                    <button class="apply-btn" @onclick="ApplyFilters">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    </div>
+
+<style>
+    .shop-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-sizing: border-box;
+    }
+
+    .header {
+        padding: 16px 20px 8px 20px;
+        background-color: #ffffff;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #000000;
+        margin: 0;
+    }
+
+    .search-container {
+        padding: 8px 20px 16px 20px;
+        background-color: #ffffff;
+    }
+
+    .search-bar {
+        display: flex;
+        align-items: center;
+        background-color: #f5f5f5;
+        border-radius: 12px;
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .search-icon {
+        font-size: 16px;
+        color: #666666;
+    }
+
+    .search-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 16px;
+        color: #000000;
+        outline: none;
+    }
+
+    .search-input::placeholder {
+        color: #999999;
+    }
+
+    .filter-icon {
+        font-size: 16px;
+        color: #3B82F6;
+        cursor: pointer;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 0 20px 100px 20px;
+        background-color: #ffffff;
+    }
+
+    .product-card {
+        margin-bottom: 16px;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    
+
+    .product-image {
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+    }
+
+    .product-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-info {
+        padding: 8px 12px 12px 12px;
+    }
+
+    .product-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0 0 4px 0;
+    }
+
+    .product-price {
+        font-size: 16px;
+        font-weight: 600;
+        color: #3ABEF9;
+        margin: 0;
+    }
+
+
+    /* Filter Modal Styles */
+    .filter-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 1000;
+        padding-bottom: 80px;
+    }
+
+    .filter-modal {
+        background: white;
+        border-radius: 20px 20px 0 0;
+        width: 100%;
+        max-width: 375px;
+        max-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(0);
+        transition: transform 0.3s ease-out;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #E5E7EB;
+        background: #FAFBFC;
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1F2937;
+        letter-spacing: -0.02em;
+    }
+
+    .close-btn {
+        background: #F3F4F6;
+        border: none;
+        font-size: 20px;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+        background: #E5E7EB;
+        color: #374151;
+    }
+
+    .filter-content {
+        padding: 24px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .filter-section {
+        margin-bottom: 32px;
+    }
+
+    .filter-section h4 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1F2937;
+        letter-spacing: -0.01em;
+    }
+
+    .price-inputs {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: 4px;
+    }
+
+    .price-input {
+        width: 100px;
+        padding: 12px 16px;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        font-size: 14px;
+        text-align: center;
+        background-color: #F9FAFB;
+        transition: all 0.2s ease;
+    }
+
+    .price-input:focus {
+        outline: none;
+        border-color: #3B82F6;
+        background-color: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .price-separator {
+        color: #9CA3AF;
+        font-weight: 500;
+        font-size: 16px;
+        margin: 0 4px;
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-left: 4px;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        font-size: 15px;
+        color: #374151;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+    .filter-option:hover {
+        background-color: #F9FAFB;
+    }
+
+    .filter-option input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3B82F6;
+        cursor: pointer;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 16px;
+        padding: 24px;
+        border-top: 1px solid #E5E7EB;
+        flex-shrink: 0;
+        background: white;
+    }
+
+    .clear-btn, .apply-btn {
+        flex: 1;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .clear-btn {
+        background: #F3F4F6;
+        color: #6B7280;
+        border: 1px solid #E5E7EB;
+    }
+
+    .clear-btn:hover {
+        background: #E5E7EB;
+        color: #374151;
+    }
+
+    .apply-btn {
+        background: #3B82F6;
+        color: white;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+
+    .apply-btn:hover {
+        background: #2563EB;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .active-filter {
+        background-color: #EBF8FF !important;
+        border-radius: 6px;
+    }
+
+    .active-filter svg path {
+        fill: #3B82F6 !important;
+    }
+</style>
+@code {
+    private List<Product> allProducts = new();
+    private List<Product> filteredProducts = new();
+
+    // Category filtering
+    private string? selectedCategory = null;
+
+    // Search functionality
+    private string _searchQuery = "";
+    private string searchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            _searchQuery = value;
+            FilterProducts();
+        }
+    }
+
+    // Filter modal
+    private bool showFilterModal = false;
+
+    // Filter options
+    private decimal? minPrice = null;
+    private decimal? maxPrice = null;
+    private bool filterNew = false;
+    private bool filterLikeNew = false;
+    private bool filterGood = false;
+    private bool filterFair = false;
+    private bool filterGrade9 = false;
+    private bool filterGrade10 = false;
+    private bool filterGrade11 = false;
+    private bool filterGrade12 = false;
+
+    private bool HasActiveFilters =>
+        minPrice.HasValue || maxPrice.HasValue ||
+        filterNew || filterLikeNew || filterGood || filterFair ||
+        filterGrade9 || filterGrade10 || filterGrade11 || filterGrade12;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load products from service
+        allProducts = await ProductService.GetAllProductsAsync();
+
+        // Check for category parameter in URL
+        var uri = new Uri(Navigation.Uri);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        selectedCategory = query["category"];
+
+        FilterProducts();
+    }
+
+    private void FilterProducts()
+    {
+        filteredProducts = allProducts.Where(product =>
+        {
+            // Search filter
+            bool matchesSearch = string.IsNullOrWhiteSpace(searchQuery) ||
+                               product.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                               product.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase);
+
+            // Price filter
+            bool matchesPrice = true;
+            if (minPrice.HasValue || maxPrice.HasValue)
+            {
+                // Extract numeric value from price string (e.g., "R 45" -> 45)
+                var priceText = product.Price.Replace("R", "").Replace("$", "").Replace(",", "").Trim();
+                if (decimal.TryParse(priceText, out decimal productPrice))
+                {
+                    if (minPrice.HasValue && productPrice < minPrice.Value)
+                        matchesPrice = false;
+                    if (maxPrice.HasValue && productPrice > maxPrice.Value)
+                        matchesPrice = false;
+                }
+            }
+
+            // Condition filter
+            bool matchesCondition = true;
+            if (filterNew || filterLikeNew || filterGood || filterFair)
+            {
+                matchesCondition = (filterNew && product.Condition == "New") ||
+                                 (filterLikeNew && product.Condition == "Like New") ||
+                                 (filterGood && product.Condition == "Good") ||
+                                 (filterFair && product.Condition == "Fair");
+            }
+
+            // Grade filter
+            bool matchesGrade = true;
+            if (filterGrade9 || filterGrade10 || filterGrade11 || filterGrade12)
+            {
+                matchesGrade = (filterGrade9 && product.Grade == "Grade 9") ||
+                             (filterGrade10 && product.Grade == "Grade 10") ||
+                             (filterGrade11 && product.Grade == "Grade 11") ||
+                             (filterGrade12 && product.Grade == "Grade 12");
+            }
+
+            // Category filter - directly compare with product category
+            bool matchesCategory = true;
+            if (!string.IsNullOrEmpty(selectedCategory))
+            {
+                matchesCategory = product.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return matchesSearch && matchesPrice && matchesCondition && matchesGrade && matchesCategory;
+        }).ToList();
+
+        StateHasChanged();
+    }
+
+    private void ToggleFilterModal()
+    {
+        showFilterModal = !showFilterModal;
+    }
+
+    private void CloseFilterModal()
+    {
+        showFilterModal = false;
+    }
+
+    private void ClearFilters()
+    {
+        minPrice = null;
+        maxPrice = null;
+        filterNew = false;
+        filterLikeNew = false;
+        filterGood = false;
+        filterFair = false;
+        filterGrade9 = false;
+        filterGrade10 = false;
+        filterGrade11 = false;
+        filterGrade12 = false;
+        FilterProducts();
+    }
+
+    private void ApplyFilters()
+    {
+        FilterProducts();
+        CloseFilterModal();
+    }
+
+    private void NavigateToProductDetails(string productId)
+    {
+        TransitionService.RequestTransition($"/pagedetails/{productId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+}

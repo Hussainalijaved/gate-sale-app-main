@@ -1,0 +1,672 @@
+@page "/pagedetails"
+@page "/pagedetails/{productId}"
+@inject NavigationManager Navigation
+@inject IProductService ProductService
+@inject FavoriteService FavoriteService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+
+<div class="page-details-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="back-button" @onclick="Back">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </div>
+        <h1 class="page-title">Product Details</h1>
+        <div class="favorite-button @(IsFavorite ? "active" : "")" @onclick="ToggleFavorite">
+            <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clip-path="url(#clip0_2_58)">
+                    <path d="M2.4875 9.07036L8.13438 14.3422C8.36875 14.561 8.67812 14.6829 9 14.6829C9.32187 14.6829 9.63125 14.561 9.86563 14.3422L15.5125 9.07036C16.4625 8.18599 17 6.94536 17 5.64849V5.46724C17 3.28286 15.4219 1.42036 13.2688 1.06099C11.8438 0.823486 10.3938 1.28911 9.375 2.30786L9 2.68286L8.625 2.30786C7.60625 1.28911 6.15625 0.823486 4.73125 1.06099C2.57812 1.42036 1 3.28286 1 5.46724V5.64849C1 6.94536 1.5375 8.18599 2.4875 9.07036Z" fill="@(IsFavorite ? "#EF4444" : "#9CA3AF")" />
+                </g>
+                <defs>
+                    <clipPath id="clip0_2_58">
+                        <path d="M0.984375 0H16.9844V16H0.984375V0Z" fill="white" />
+                    </clipPath>
+                </defs>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Product Image Section -->
+    <div class="product-image-section">
+        @if (!string.IsNullOrEmpty(currentProduct?.DiscountBadge))
+        {
+            <div class="discount-badge">@currentProduct.DiscountBadge</div>
+        }
+        <div class="product-image-container" @ontouchstart="OnTouchStart" @ontouchend="OnTouchEnd" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp">
+            <div class="product-image-slider" style="transform: translateX(@(-currentImageIndex * 100)%)">
+                @foreach (var imageUrl in GetImageUrls())
+                {
+                    <div class="product-image">
+                        <img src="@imageUrl" alt="@currentProduct?.Title" draggable="false"/>
+                    </div>
+                }
+            </div>
+
+            <!-- Navigation arrows for desktop -->
+            @if (GetImageUrls().Count > 1)
+            {
+                <button class="nav-arrow nav-arrow-left @(currentImageIndex == 0 ? "disabled" : "")" @onclick="PreviousImage">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="nav-arrow nav-arrow-right @(currentImageIndex == GetImageUrls().Count - 1 ? "disabled" : "")" @onclick="NextImage">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            }
+        </div>
+
+        <!-- Dynamic pagination dots -->
+        @if (GetImageUrls().Count > 1)
+        {
+            <div class="pagination-dots">
+                @for (int i = 0; i < GetImageUrls().Count; i++)
+                {
+                    var index = i; // Capture for closure
+                    <div class="dot @(currentImageIndex == index ? "active" : "")" @onclick="() => GoToImage(index)"></div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-info">
+        <div class="category-tag">@currentProduct?.Category</div>
+        <h2 class="product-title">@currentProduct?.Title</h2>
+        <div class="price-section">
+            <span class="current-price">@currentProduct?.CurrentPrice</span>
+            @if (!string.IsNullOrEmpty(currentProduct?.OriginalPrice))
+            {
+                <span class="original-price">@currentProduct.OriginalPrice</span>
+            }
+        </div>
+
+        <div class="location-info">
+            <div class="delivery">
+                <span class="delivery-icon">
+                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.5 0C0.671875 0 0 0.671875 0 1.5V11.5C0 12.3281 0.671875 13 1.5 13H2C2 14.6562 3.34375 16 5 16C6.65625 16 8 14.6562 8 13H12C12 14.6562 13.3438 16 15 16C16.6562 16 18 14.6562 18 13H19C19.5531 13 20 12.5531 20 12C20 11.4469 19.5531 11 19 11V9V8V7.41563C19 6.88438 18.7906 6.375 18.4156 6L16 3.58437C15.625 3.20937 15.1156 3 14.5844 3H13V1.5C13 0.671875 12.3281 0 11.5 0H1.5ZM13 5H14.5844L17 7.41563V8H13V5ZM3.5 13C3.5 12.6022 3.65804 12.2206 3.93934 11.9393C4.22064 11.658 4.60218 11.5 5 11.5C5.39782 11.5 5.77936 11.658 6.06066 11.9393C6.34196 12.2206 6.5 12.6022 6.5 13C6.5 13.3978 6.34196 13.7794 6.06066 14.0607C5.77936 14.342 5.39782 14.5 5 14.5C4.60218 14.5 4.22064 14.342 3.93934 14.0607C3.65804 13.7794 3.5 13.3978 3.5 13ZM15 11.5C15.3978 11.5 15.7794 11.658 16.0607 11.9393C16.342 12.2206 16.5 12.6022 16.5 13C16.5 13.3978 16.342 13.7794 16.0607 14.0607C15.7794 14.342 15.3978 14.5 15 14.5C14.6022 14.5 14.2206 14.342 13.9393 14.0607C13.658 13.7794 13.5 13.3978 13.5 13C13.5 12.6022 13.658 12.2206 13.9393 11.9393C14.2206 11.658 14.6022 11.5 15 11.5Z" fill="#4ADE80"/>
+                    </svg>
+
+                </span>
+                <span class="delivery-text">Delivery fee</span>
+                <span class="delivery-value">R100</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="description-section">
+        <h3 class="description-title">Description</h3>
+        <p class="description-text">
+            @currentProduct?.Description
+        </p>
+        <div class="features">
+            @if (currentProduct?.Features != null)
+            {
+                @foreach (var feature in currentProduct.Features)
+                {
+                    <p class="feature-line">@feature</p>
+                }
+            }
+        </div>
+
+    </div>
+
+    <!-- Protection Message -->
+    <div class="protection-message">
+        <div class="check-icon">
+            <svg width="14" height="15" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7.00001 0.75C7.12579 0.75 7.25157 0.777344 7.36642 0.829297L12.5152 3.01406C13.1168 3.26836 13.5652 3.86172 13.5625 4.57812C13.5488 7.29063 12.4332 12.2535 7.72189 14.5094C7.26525 14.7281 6.73478 14.7281 6.27814 14.5094C1.56681 12.2535 0.451184 7.29063 0.437512 4.57812C0.434778 3.86172 0.883216 3.26836 1.48478 3.01406L6.63634 0.829297C6.74845 0.777344 6.87423 0.75 7.00001 0.75ZM7.00001 2.57656V12.9125C10.7734 11.0859 11.7879 7.0418 11.8125 4.61641L7.00001 2.57656Z" fill="white"/>
+            </svg>
+
+        </div>
+        <div class="protection-text">
+            <span>Your payment is held safely until you confirm that your item has been delivered. All orders are delivered to a <a href="https://thecourierguy.co.za/locations/" target="_blank" class="pudo-link">Pudo locker</a> of your choice.</span>
+        </div>
+    </div>
+
+    <!-- Buy Button -->
+    <div class="buy-section">
+        <button class="buy-button" @onclick=Sell>Buy Now – @GetTotalPrice()</button>
+    </div>
+</div>
+
+<style>
+    .page-details-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 375px;
+    width: 100%;
+    margin: 0 auto;
+    background-color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+    }
+
+    .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+    }
+
+    .back-button {
+    font-size: 24px;
+    color: #333333;
+    cursor: pointer;
+    }
+
+    .page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+    margin: 0;
+    }
+
+    .favorite-button {
+    font-size: 24px;
+    color: #333333;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+
+    .favorite-button:hover {
+    background-color: #F3F4F6;
+    }
+
+    .favorite-button.active {
+    background-color: #FEF2F2;
+    }
+
+    .favorite-button.active:hover {
+    background-color: #FEE2E2;
+    }
+
+    .product-image-section {
+    position: relative;
+    padding: 20px;
+    background-color: #ffffff;
+    }
+
+    .discount-badge {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    background-color: #FF4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 3;
+    }
+
+    .product-image-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    touch-action: pan-y;
+    user-select: none;
+    }
+
+    .product-image-slider {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s ease-in-out;
+    }
+
+    .product-image {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    box-sizing: border-box;
+    }
+
+    .product-image img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    pointer-events: none;
+    }
+
+    .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+    }
+
+   
+
+    .nav-arrow.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    }
+
+    .nav-arrow-left {
+    left: 10px;
+    }
+
+    .nav-arrow-right {
+    right: 10px;
+    }
+
+    .pagination-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    }
+
+    .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #cccccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    }
+
+   
+
+    .dot.active {
+    background-color: #3B82F6;
+    transform: scale(1.2);
+    }
+
+    .product-info {
+    padding: 20px;
+    }
+
+    .category-tag {
+    display: inline-block;
+    background-color: #E7B081;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    }
+
+    .product-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+    }
+
+    .price-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    }
+
+    .current-price {
+    font-size: 28px;
+    font-weight: 800;
+    color: #FF4444;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .original-price {
+    font-size: 20px;
+    font-weight: 500;
+    color: #AAAAAA;
+    text-decoration: line-through;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .location-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #F9FAFB;
+    border-radius: 15px;
+    padding: 16px;
+    }
+
+    .distance, .delivery {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 0;
+    }
+
+    .location-icon, .delivery-icon {
+    font-size: 16px;
+    }
+
+    .distance-text, .delivery-text {
+    font-size: 15px;
+    color: #666666;
+    flex: 1;
+    font-weight: 400;
+    }
+
+    .distance-value {
+    font-size: 15px;
+    color: #333333;
+    font-weight: 600;
+    }
+
+    .delivery-value {
+        font-size: 15px;
+        color: #333333;
+        font-weight: 700;
+    }
+    
+    .pudo-link {
+        color: #3ABEF9;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+
+    .description-section {
+    padding: 20px;
+    border-top: 1px solid #f0f0f0;
+    }
+
+    .description-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+    margin: 0 0 12px 0;
+    }
+
+    .description-text {
+    font-size: 14px;
+    color: #666666;
+    line-height: 1.5;
+    margin: 0 0 12px 0;
+    }
+
+    .features {
+    margin: 12px 0;
+    }
+
+    .feature-line {
+    font-size: 14px;
+    color: #666666;
+    line-height: 1.5;
+    margin: 4px 0;
+    }
+
+    .protection-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background-color: #f0fdf4;
+    margin: 0 20px;
+    border-radius: 12px;
+    }
+
+    .check-icon {
+    width: 24px;
+    height: 24px;
+    background-color: #22C55E;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+    }
+
+    .protection-text {
+    font-size: 14px;
+    color: black;
+    line-height: 1.4;
+    }
+
+    .buy-section {
+    padding: 20px;
+    margin-top: auto;
+    }
+
+    .buy-button {
+    width: 100%;
+        background-color: #00BFFF;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    }
+
+</style>
+@code {
+    [Parameter] public string? ProductId { get; set; }
+
+    private ProductDetail? currentProduct;
+    private int currentImageIndex = 0;
+    private double touchStartX = 0;
+    private double mouseStartX = 0;
+    private bool isDragging = false;
+
+    private bool IsFavorite => currentProduct != null && FavoriteService.IsFavorite(currentProduct.Id);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load product details from service
+        if (!string.IsNullOrEmpty(ProductId))
+        {
+            currentProduct = await ProductService.GetProductDetailByIdAsync(ProductId);
+        }
+        else
+        {
+            // Default to headphone if no ProductId specified (for backward compatibility)
+            currentProduct = await ProductService.GetProductDetailByIdAsync("headphone");
+        }
+    }
+
+    private List<string> GetImageUrls()
+    {
+        if (currentProduct == null) return new List<string>();
+
+        // If ImageUrls list has items, use it; otherwise fall back to single ImageUrl
+        if (currentProduct.ImageUrls.Any())
+        {
+            return currentProduct.ImageUrls;
+        }
+        else if (!string.IsNullOrEmpty(currentProduct.ImageUrl))
+        {
+            return new List<string> { currentProduct.ImageUrl };
+        }
+
+        return new List<string>();
+    }
+
+    // Image navigation methods
+    private void NextImage()
+    {
+        var imageUrls = GetImageUrls();
+        if (currentImageIndex < imageUrls.Count - 1)
+        {
+            currentImageIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousImage()
+    {
+        if (currentImageIndex > 0)
+        {
+            currentImageIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void GoToImage(int index)
+    {
+        var imageUrls = GetImageUrls();
+        if (index >= 0 && index < imageUrls.Count)
+        {
+            currentImageIndex = index;
+            StateHasChanged();
+        }
+    }
+
+    // Touch/swipe event handlers
+    private void OnTouchStart(TouchEventArgs e)
+    {
+        if (e.Touches.Length > 0)
+        {
+            touchStartX = e.Touches[0].ClientX;
+        }
+    }
+
+    private void OnTouchEnd(TouchEventArgs e)
+    {
+        if (e.ChangedTouches.Length > 0)
+        {
+            var touchEndX = e.ChangedTouches[0].ClientX;
+            var deltaX = touchStartX - touchEndX;
+
+            // Minimum swipe distance to trigger navigation
+            if (Math.Abs(deltaX) > 50)
+            {
+                if (deltaX > 0)
+                {
+                    NextImage(); // Swipe left - next image
+                }
+                else
+                {
+                    PreviousImage(); // Swipe right - previous image
+                }
+            }
+        }
+    }
+
+    // Mouse event handlers for desktop
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        mouseStartX = e.ClientX;
+        isDragging = true;
+    }
+
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        if (isDragging)
+        {
+            var deltaX = mouseStartX - e.ClientX;
+
+            // Minimum drag distance to trigger navigation
+            if (Math.Abs(deltaX) > 50)
+            {
+                if (deltaX > 0)
+                {
+                    NextImage(); // Drag left - next image
+                }
+                else
+                {
+                    PreviousImage(); // Drag right - previous image
+                }
+            }
+            isDragging = false;
+        }
+    }
+
+    private void ToggleFavorite()
+    {
+        if (currentProduct != null)
+        {
+            var favoriteItem = new FavoriteItem
+            {
+                Id = currentProduct.Id,
+                Title = currentProduct.Title,
+                Price = currentProduct.CurrentPrice,
+                Details = currentProduct.Description,
+                ImageUrl = currentProduct.ImageUrl,
+                IsVerified = currentProduct.IsVerified,
+                Rating = currentProduct.Rating
+            };
+
+            FavoriteService.ToggleFavorite(favoriteItem);
+            StateHasChanged(); // Refresh the UI to show the updated favorite state
+        }
+    }
+
+    private void Sell()
+    {
+        if (currentProduct != null)
+        {
+            TransitionService.RequestTransition($"/checkout/{currentProduct.Id}", GateSale.Services.TransitionType.SlideLeft);
+        }
+    }
+    
+    private string GetTotalPrice()
+    {
+        if (currentProduct == null) return "R 0.00";
+        
+        // Extract numeric value from price
+        decimal productPrice = 0;
+        string priceText = currentProduct.CurrentPrice;
+        
+        // Remove non-numeric characters except decimal point
+        var cleanPrice = new string(priceText.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        decimal.TryParse(cleanPrice, out productPrice);
+        
+        // Fixed delivery fee of R100
+        decimal deliveryFee = 100;
+        
+        // Calculate total
+        decimal total = productPrice + deliveryFee;
+        
+        return $"R {total:F2}";
+    }
+
+    private void Back()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideRight);
+    }
+
+}

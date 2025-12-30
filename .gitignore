@@ -1,0 +1,49 @@
+# .gitignore for GateSale Project
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio 2015/2017/2019/2022 cache/options directory
+.vs/
+
+# Sensitive configuration files
+GateSaleBackend/GateSale.API/appsettings.json
+GateSaleBackend/GateSale.API/appsettings.Development.json
+GateSaleBackend/GateSale.API/appsettings.Production.json
+
+# Logs and temporary files
+*.log
+cloudflare.log
+tunnel.log
+build_errors.txt
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Tooling
+.antigravity/
+.gemini/
+brain/
+node_modules/
+.npm/

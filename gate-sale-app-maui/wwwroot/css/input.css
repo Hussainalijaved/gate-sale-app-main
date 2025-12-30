@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom component classes */
+@layer components {
+  .mobile-container {
+    @apply w-[375px] h-[812px] bg-white mx-auto relative font-system overflow-hidden;
+  }
+  
+  .student-face {
+    @apply absolute w-[42px] h-[42px] rounded-full;
+  }
+  
+  .student-eye {
+    @apply absolute w-[3px] h-[3px] bg-black rounded-full;
+  }
+  
+  .student-mouth {
+    @apply absolute w-[6px] h-[3px] bg-sale-orange rounded-b-md;
+  }
+}

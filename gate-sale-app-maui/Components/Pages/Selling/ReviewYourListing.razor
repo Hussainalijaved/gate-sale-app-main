@@ -1,0 +1,525 @@
+@page "/review-your-listing"
+@inject NavigationManager Navigation
+@inject ProductCreationService ProductCreationService
+@inject IProductService ProductService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+
+<div class="review-container">
+    <!-- Header -->
+    <div class="header-section">
+        <button class="btn-back" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <h1 class="page-title">Review Your Listing</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Success Icon -->
+        <div class="success-section">
+            <div class="success-icon">
+                <svg width="28" height="31" viewBox="0 0 28 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_1003)">
+                        <path d="M3.8457 4.17773L0.875 10.125H13.0625V2.625H6.36523C5.29883 2.625 4.32617 3.22852 3.8457 4.17773ZM14.9375 10.125H27.125L24.1543 4.17773C23.6738 3.22852 22.7012 2.625 21.6348 2.625H14.9375V10.125ZM27.125 12H0.875V25.125C0.875 27.1934 2.55664 28.875 4.625 28.875H23.375C25.4434 28.875 27.125 27.1934 27.125 25.125V12Z" fill="#4ADE80" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_1003">
+                            <path d="M0.875 0.75H27.125V30.75H0.875V0.75Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+            </div>
+            <p class="success-text">Almost ready to list your item!</p>
+        </div>
+
+        <!-- Product Preview Card -->
+        <div class="product-card">
+            <div class="product-image">
+                <img src="@currentProduct.GetMainImageUrl()" alt="@currentProduct.Title" class="product-photo" />
+            </div>
+            <div class="product-details">
+                <div class="product-header">
+                    <span class="category-tag">@currentProduct.GetPrimaryCategory()</span>
+                </div>
+                <h3 class="product-title">@currentProduct.Title</h3>
+                <p class="product-price">@currentProduct.GetFormattedPrice()</p>
+                <p class="product-description">@currentProduct.Description</p>
+            </div>
+        </div>
+
+        <!-- Info Sections -->
+        <div class="info-sections">
+            <!-- Category -->
+            <div class="info-item">
+                <div class="info-icon category-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_2_1021)">
+                            <path d="M9.875 10.9375V15.0254C9.875 15.4903 10.0582 15.936 10.3863 16.2641L15.1988 21.0766C15.8824 21.7602 16.9898 21.7602 17.6734 21.0766L21.3238 17.4262C22.0074 16.7426 22.0074 15.6352 21.3238 14.9516L16.5113 10.1391C16.1832 9.81096 15.7375 9.62776 15.2727 9.62776H11.1875C10.4629 9.62502 9.875 10.2129 9.875 10.9375ZM12.9375 11.8125C13.1696 11.8125 13.3921 11.9047 13.5562 12.0688C13.7203 12.2329 13.8125 12.4555 13.8125 12.6875C13.8125 12.9196 13.7203 13.1421 13.5562 13.3062C13.3921 13.4703 13.1696 13.5625 12.9375 13.5625C12.7054 13.5625 12.4829 13.4703 12.3188 13.3062C12.1547 13.1421 12.0625 12.9196 12.0625 12.6875C12.0625 12.4555 12.1547 12.2329 12.3188 12.0688C12.4829 11.9047 12.7054 11.8125 12.9375 11.8125Z" fill="#3ABEF9" />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_2_1021">
+                                <path d="M9.875 8.75H22.125V22.75H9.875V8.75Z" fill="white" />
+                            </clipPath>
+                        </defs>
+                    </svg>
+
+                </div>
+                <div class="info-content">
+                    <p class="info-label">Category</p>
+                    <p class="info-value">@currentProduct.GetPrimaryCategory()</p>
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="info-item">
+                <div class="info-icon price-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_2_1031)">
+                            <path d="M15.9998 8.75C16.4838 8.75 16.8748 9.14102 16.8748 9.625V10.6012C16.9185 10.6066 16.9596 10.6121 17.0033 10.6203C17.0142 10.623 17.0225 10.623 17.0334 10.6258L18.3459 10.8664C18.8217 10.9539 19.1361 11.4105 19.0486 11.8836C18.9611 12.3566 18.5045 12.6738 18.0314 12.5863L16.7326 12.3484C15.8767 12.2227 15.1221 12.3074 14.5916 12.518C14.0611 12.7285 13.8478 13.0184 13.7986 13.2863C13.7439 13.5789 13.785 13.743 13.8314 13.8441C13.8807 13.9508 13.9818 14.0711 14.1814 14.2051C14.6271 14.4977 15.3107 14.6891 16.1967 14.9242L16.276 14.9461C17.058 15.1539 18.015 15.4055 18.726 15.8703C19.1142 16.1246 19.4807 16.4691 19.7076 16.9504C19.94 17.4398 19.9892 17.9867 19.8826 18.5691C19.6939 19.6082 18.9775 20.3027 18.0889 20.6664C17.7142 20.8195 17.3068 20.918 16.8748 20.9672V21.875C16.8748 22.359 16.4838 22.75 15.9998 22.75C15.5158 22.75 15.1248 22.359 15.1248 21.875V20.9207C15.1139 20.918 15.1002 20.918 15.0892 20.9152H15.0838C14.4166 20.8113 13.3201 20.5242 12.5818 20.1961C12.1416 19.9992 11.942 19.4824 12.1389 19.0422C12.3357 18.602 12.8525 18.4023 13.2928 18.5992C13.8642 18.8535 14.8049 19.1051 15.349 19.1898C16.2213 19.3184 16.9404 19.2445 17.4271 19.0449C17.8892 18.8562 18.0998 18.5828 18.16 18.2547C18.2119 17.9648 18.1709 17.798 18.1244 17.6969C18.0725 17.5875 17.9713 17.4672 17.7689 17.3332C17.3205 17.0406 16.6342 16.8492 15.7455 16.6141L15.6689 16.5949C14.8896 16.3871 13.9326 16.1328 13.2217 15.668C12.8334 15.4137 12.4697 15.0664 12.2428 14.5852C12.0131 14.0957 11.9666 13.5488 12.076 12.9664C12.2728 11.9219 13.0549 11.2438 13.9435 10.891C14.3072 10.7461 14.7064 10.6477 15.1248 10.5902V9.625C15.1248 9.14102 15.5158 8.75 15.9998 8.75Z" fill="#E7B081" />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_2_1031">
+                                <path d="M11.625 8.75H20.375V22.75H11.625V8.75Z" fill="white" />
+                            </clipPath>
+                        </defs>
+                    </svg>
+
+                </div>
+                <div class="info-content">
+                    <p class="info-label">Price</p>
+                    <p class="info-value">@currentProduct.GetFormattedPrice()</p>
+                </div>
+            </div>
+
+            <!-- Condition -->
+            <div class="info-item">
+                <div class="info-icon condition-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_2_1041)">
+                            <path d="M16.7902 9.24219C16.6453 8.94141 16.339 8.75 16.0027 8.75C15.6664 8.75 15.3629 8.94141 15.2152 9.24219L13.457 12.8598L9.53045 13.4395C9.20232 13.4887 8.92889 13.7184 8.82772 14.0328C8.72654 14.3473 8.80857 14.6945 9.04373 14.927L11.8929 17.7461L11.2203 21.7301C11.1656 22.0582 11.3023 22.3918 11.573 22.5859C11.8437 22.7801 12.2019 22.8047 12.4972 22.6488L16.0055 20.7758L19.5137 22.6488C19.809 22.8047 20.1672 22.7828 20.4379 22.5859C20.7086 22.3891 20.8453 22.0582 20.7906 21.7301L20.1152 17.7461L22.9644 14.927C23.1996 14.6945 23.2844 14.3473 23.1804 14.0328C23.0765 13.7184 22.8058 13.4887 22.4777 13.4395L18.5484 12.8598L16.7902 9.24219Z" fill="#4ADE80" />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_2_1041">
+                                <path d="M8.125 8.75H23.875V22.75H8.125V8.75Z" fill="white" />
+                            </clipPath>
+                        </defs>
+                    </svg>
+
+                </div>
+                <div class="info-content">
+                    <p class="info-label">Condition</p>
+                    <p class="info-value">@currentProduct.Condition</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PUDO Drop-off Depot Section -->
+        <div class="info-item">
+            <div class="info-icon pudo-icon">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_pudo)">
+                        <path d="M22.125 11.25H9.875C9.05381 11.25 8.375 11.9288 8.375 12.75V20.5C8.375 21.3212 9.05381 22 9.875 22H22.125C22.9462 22 23.625 21.3212 23.625 20.5V12.75C23.625 11.9288 22.9462 11.25 22.125 11.25Z" fill="#FF6B6B"/>
+                        <path d="M21.375 14.75H10.625C10.2798 14.75 10 15.0298 10 15.375V17.875C10 18.2202 10.2798 18.5 10.625 18.5H21.375C21.7202 18.5 22 18.2202 22 17.875V15.375C22 15.0298 21.7202 14.75 21.375 14.75Z" fill="white"/>
+                        <path d="M16 8.75C17.2426 8.75 18.25 9.75736 18.25 11H13.75C13.75 9.75736 14.7574 8.75 16 8.75Z" fill="#FF6B6B"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_pudo">
+                            <path d="M8 8.75H24V22.75H8V8.75Z" fill="white"/>
+                        </clipPath>
+                    </defs>
+                </svg>
+            </div>
+            <div class="info-content">
+                <p class="info-label">PUDO Drop-off Depot</p>
+                <p class="info-value">@pudoLocation</p>
+            </div>
+        </div>
+
+        <!-- Ready to List Section -->
+        <div class="ready-section">
+            <div class="ready-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" fill="#4ADE80" />
+                    <g clip-path="url(#clip0_2_696)">
+                        <path d="M17.0297 7.97034C17.3227 8.26331 17.3227 8.73909 17.0297 9.03206L11.0297 15.0321C10.7368 15.325 10.261 15.325 9.96802 15.0321L6.96802 12.0321C6.67505 11.7391 6.67505 11.2633 6.96802 10.9703C7.26099 10.6774 7.73677 10.6774 8.02974 10.9703L10.5 13.4383L15.9704 7.97034C16.2633 7.67737 16.7391 7.67737 17.0321 7.97034H17.0297Z" fill="white" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_696">
+                            <path d="M6.75 5.5H17.25V17.5H6.75V5.5Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+
+
+
+            </div>
+            <div class="ready-content">
+                <h4 class="ready-title">Ready to List</h4>
+                <p class="ready-description">Your listing looks great! Once you confirm, it will be visible to other students in your area.</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-banner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <!-- List Button -->
+        <button class="btn-base btn-list" @onclick="ListItem" disabled="@isListing">
+            @if (isListing)
+            {
+                <span>Processing...</span>
+            }
+            else
+            {
+                <span>List My Item</span>
+            }
+        </button>
+
+        <!-- Terms Text -->
+        <p class="terms-text">By listing, you agree to our terms and conditions</p>
+    </div>
+</div>
+
+<style>
+    .review-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FFFFFF;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+
+
+    
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #000000;
+        margin: 0;
+        text-align: center;
+        flex: 1;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .success-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .success-icon {
+        width: 64px;
+        height: 64px;
+        background-color: #D1FAE5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .success-text {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+        text-align: center;
+    }
+
+    .product-card {
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 16px;
+    }
+
+    .product-image {
+        width: 80px;
+        height: 80px;
+        background-color: #F3F4F6;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .product-photo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    .product-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .product-header {
+        margin-bottom: 4px;
+    }
+
+    .category-tag {
+        background-color: #3ABEF91A;
+        color: #3ABEF9;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .product-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+    }
+
+    .product-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #10B981;
+        margin: 0;
+    }
+
+    .product-description {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .info-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .info-item {
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .category-icon {
+        background-color: #DBEAFE;
+    }
+
+    .price-icon {
+        background-color: #FEF3C7;
+    }
+
+    .condition-icon {
+        background-color: #D1FAE5;
+    }
+    
+    .pudo-icon {
+        background-color: #FFE2E2;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0 0 2px 0;
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+    }
+
+    .ready-section {
+        background-color: #4ADE800D;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+    }
+
+    .ready-icon {
+        width: 24px;
+        height: 24px;
+        background-color: #10B981;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .ready-content {
+        flex: 1;
+    }
+
+    .ready-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0 0 4px 0;
+    }
+
+    .ready-description {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+
+
+    .terms-text {
+        font-size: 12px;
+        color: #9CA3AF;
+        text-align: center;
+        margin: 8px 0 0 0;
+        line-height: 1.4;
+    }
+
+    .error-banner {
+        background-color: #FEE2E2;
+        color: #B91C1C;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+</style>
+
+@code {
+    private ProductCreationData currentProduct = new();
+    private bool isListing = false;
+    private string errorMessage = "";
+    private string pudoLocation = "Campus Central Hub"; // Default PUDO location
+
+    protected override void OnInitialized()
+    {
+        currentProduct = ProductCreationService.GetCurrentProduct();
+
+        // Redirect if product data is not complete
+        if (!currentProduct.IsValid())
+        {
+            TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.SlideRight);
+        }
+        
+        // Set default condition if not already set
+        if (string.IsNullOrEmpty(currentProduct.Condition))
+        {
+            currentProduct.Condition = "Good";
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/set-your-price", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private async Task ListItem()
+    {
+        if (isListing) return; // Prevent double-clicking
+
+        isListing = true;
+        StateHasChanged();
+
+        try
+        {
+            // Create product via API
+            var productId = await ProductService.CreateProductAsync(currentProduct);
+
+            if (productId != null)
+            {
+                // Reset the product creation data for next use
+                ProductCreationService.ResetProduct();
+
+                // Navigate to marketplace to show the new listing
+                TransitionService.RequestTransition("/home2", GateSale.Services.TransitionType.Fade);
+            }
+            else
+            {
+                errorMessage = "Failed to create listing. Please try again.";
+                Console.WriteLine("Failed to create product via API");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            Console.WriteLine($"Error listing item: {ex.Message}");
+        }
+        finally
+        {
+            isListing = false;
+            StateHasChanged();
+        }
+    }
+}

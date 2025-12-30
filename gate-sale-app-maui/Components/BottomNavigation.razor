@@ -1,0 +1,171 @@
+@inject GateSale.Services.PageTransitionService TransitionService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<div class="bottom-nav">
+    <button class="nav-item @(CurrentPage == "home" ? "active" : "")" @onclick="GoToHome">
+        <div class="icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M10 20V14H14V20H19V12H22L12 3L2 12H5V20H10Z" fill="@(CurrentPage == "home" ? "#00BFFF" : "#9CA3AF")" />
+            </svg>
+            <span class="nav-label">Home</span>
+        </div>
+    </button>
+    <button class="nav-item @(CurrentPage == "shop" ? "active" : "")" @onclick="GoToShop">
+        <div class="icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 7H5L3 3H1V1H4.27L6.21 5H20L17 12H8L6.27 15H17V17H5C4.45 17 4 16.55 4 16C4 15.65 4.17 15.35 4.41 15.15L6 13H2.25L4.52 8.5L6 7H19ZM7.5 19C8.33 19 9 19.67 9 20.5S8.33 22 7.5 22 6 21.33 6 20.5 6.67 19 7.5 19ZM16.5 19C17.33 19 18 19.67 18 20.5S17.33 22 16.5 22 15 21.33 15 20.5 15.67 19 16.5 19Z" fill="@(CurrentPage == "shop" ? "#00BFFF" : "#9CA3AF")"/>
+                <path d="M6 6H18L16.5 10H7.5L6 6Z" fill="@(CurrentPage == "shop" ? "#00BFFF" : "#9CA3AF")"/>
+            </svg>
+            <span class="nav-label">Shop</span>
+        </div>
+    </button>
+    <button class="nav-item @(CurrentPage == "sell" ? "active" : "")" @onclick="GoToSell">
+        <div class="icon-wrap">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19M5 12H19" stroke="@(CurrentPage == "sell" ? "#00BFFF" : "#9CA3AF")" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">Sell</span>
+        </div>
+    </button>
+    <button class="nav-item @(CurrentPage == "saved" ? "active" : "")" @onclick="GoToSaved">
+        <div class="icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z" 
+                      stroke="@(CurrentPage == "saved" ? "#00BFFF" : "#9CA3AF")" 
+                      fill="@(CurrentPage == "saved" ? "#00BFFF" : "none")"
+                      stroke-width="2"/>
+            </svg>
+            <span class="nav-label">Saved</span>
+        </div>
+    </button>
+    <button class="nav-item @(CurrentPage == "profile" ? "active" : "")" @onclick="GoToProfile">
+        <div class="icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" 
+                      stroke="@(CurrentPage == "profile" ? "#00BFFF" : "#9CA3AF")" 
+                      stroke-width="2" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round" />
+                <circle cx="12" cy="7" r="4" 
+                        stroke="@(CurrentPage == "profile" ? "#00BFFF" : "#9CA3AF")" 
+                        stroke-width="2" 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round" />
+            </svg>
+            <span class="nav-label">Profile</span>
+        </div>
+    </button>
+</div>
+
+<style>
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 375px;
+        height: 70px;
+        background: white;
+        border-top: 1px solid #E5E7EB;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 12px;
+        box-sizing: border-box;
+        z-index: 9999;
+    }
+
+    .nav-item {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+    }
+
+    .icon-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .nav-label {
+        font-size: 10px;
+        font-weight: 500;
+        color: #9CA3AF;
+        margin-top: 4px;
+    }
+
+    .nav-item.active .nav-label {
+        color: #00BFFF;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string CurrentPage { get; set; } = "home";
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private void GoToHome()
+    {
+        if (CurrentPage != "home")
+        {
+            TransitionService.RequestTransition("/home2", GateSale.Services.TransitionType.Fade);
+        }
+    }
+
+    private void GoToShop()
+    {
+        if (CurrentPage != "shop")
+        {
+            TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.Fade);
+        }
+    }
+
+    private void GoToSell()
+    {
+        if (CurrentPage != "sell")
+        {
+            TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.Fade);
+        }
+    }
+
+    private void GoToSaved()
+    {
+        if (CurrentPage != "saved")
+        {
+            TransitionService.RequestTransition("/favorites", GateSale.Services.TransitionType.Fade);
+        }
+    }
+
+    private void GoToProfile()
+    {
+        if (CurrentPage != "profile")
+        {
+            TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.Fade);
+        }
+    }
+}

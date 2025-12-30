@@ -1,0 +1,62 @@
+﻿@inherits LayoutComponentBase
+@using GateSale.Services
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<TransitionContainer>
+    @Body
+</TransitionContainer>
+
+@if (ShouldShowNavigation())
+{
+    <BottomNavigation CurrentPage="@GetCurrentPage()" />
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private bool ShouldShowNavigation()
+    {
+        var uri = NavigationManager.Uri;
+        var path = NavigationManager.ToBaseRelativePath(uri);
+        
+        // Show navigation only on these specific pages
+        return path switch
+        {
+            "home2" or "" => true,  // Marketplace
+            "shop" => true,         // Shop
+            "favorites" => true,    // Favorites
+            "profile" => true,      // Profile
+            _ => false
+        };
+    }
+
+    private string GetCurrentPage()
+    {
+        var uri = NavigationManager.Uri;
+        var path = NavigationManager.ToBaseRelativePath(uri);
+        
+        return path switch
+        {
+            "home2" or "" => "home",
+            "shop" => "shop",
+            "what-are-you-selling" => "sell",
+            "favorites" => "saved",
+            "profile" => "profile",
+            _ => "home"
+        };
+    }
+}

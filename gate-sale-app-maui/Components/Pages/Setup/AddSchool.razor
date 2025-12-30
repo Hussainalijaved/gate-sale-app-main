@@ -1,0 +1,531 @@
+@page "/addschool"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+
+<div class="add-school-container">
+    <!-- Header with back button -->
+    <div class="header-section">
+        <button class="back-button" @onclick="GoBack" aria-label="Go back">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+
+        </button>
+    </div>
+
+    <!-- School illustration -->
+    <div class="illustration-section">
+        <div class="school-illustration">
+            <div class="image-wrapper">
+                <img src="/images/school.jpg" alt="School Building" class="school-image" />
+            </div>            <!-- Green location pin badge -->
+            <div class="location-badge" title="Add your school">
+                <svg width="16" height="16" viewBox="0 0 24 24" role="img" aria-hidden="true">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5Z" fill="white"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title and description -->
+    <div class="content-section">
+        <h1 class="main-title">Oops — We Don't Support Your School Yet</h1>
+        <p class="description">
+            Tell us which school you're from, and we'll add it soon. We're working hard to support new schools everywhere!
+        </p>
+    </div>
+
+    <!-- Form section -->
+    <div class="form-section">
+        <!-- School Name -->
+        <div class="input-group">
+            <label class="input-label">School Name</label>
+            <input type="text" class="form-input" placeholder="Enter your school name" @bind="SchoolNameInput" />
+        </div>
+
+        <!-- City -->
+        <div class="input-group">
+            <label class="input-label">City</label>
+            <input type="text" class="form-input" placeholder="City where your school is located" @bind="City" />
+        </div>
+
+        <!-- Student Email -->
+        <div class="input-group">
+            <label class="input-label">Student Email</label>
+            <input type="email" class="form-input" placeholder="student@example.edu" @bind="StudentEmail" />
+        </div>
+
+        <!-- School Contact Person -->
+        <div class="input-group">
+            <label class="input-label">School Contact Person <span class="optional">(Optional)</span></label>
+            <input type="text" class="form-input" placeholder="Name of teacher or administrator" @bind="ContactPerson" />
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-message-container">
+            <p class="error-message">@errorMessage</p>
+        </div>
+    }
+
+    <!-- Request button -->
+    <div class="button-section">
+        <button class="request-button" @onclick="RequestSchoolAccess" disabled="@isProcessing">
+            @if (isProcessing)
+            {
+                <span>Processing...</span>
+            }
+            else
+            {
+                <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_162)">
+                        <path d="M15.7063 0.174997C16.022 0.393747 16.1876 0.771872 16.1282 1.15L14.1282 14.15C14.0813 14.4531 13.897 14.7187 13.6282 14.8687C13.3595 15.0187 13.0376 15.0375 12.7532 14.9187L9.01571 13.3656L6.87508 15.6812C6.59696 15.9844 6.15946 16.0844 5.77508 15.9344C5.39071 15.4125 5.14071 15.4125 5.14071 15V12.3875C5.14071 12.2625 5.18758 12.1437 5.27196 12.0531L10.5095 6.3375C10.6907 6.14062 10.6845 5.8375 10.497 5.65C10.3095 5.4625 10.0063 5.45 9.80946 5.62812L3.45321 11.275L0.693831 9.89375C0.362581 9.72812 0.150081 9.39687 0.140706 9.02812C0.131331 8.65937 0.325081 8.31562 0.643831 8.13125L14.6438 0.131247C14.9782 -0.0593776 15.3907 -0.0406276 15.7063 0.174997Z" fill="white" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_162">
+                            <path d="M0.140625 0H16.1406V16H0.140625V0Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+                <span>Request School Access</span>
+            }
+        </button>
+    </div>
+
+    <!-- Footer note -->
+    <div class="footer-section">
+        <div class="footer-card">
+            <div class="footer-pill">
+                <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_2_170)">
+                        <path d="M8.59375 0C10.7155 0 12.7503 0.842855 14.2506 2.34315C15.7509 3.84344 16.5938 5.87827 16.5938 8C16.5938 10.1217 15.7509 12.1566 14.2506 13.6569C12.7503 15.1571 10.7155 16 8.59375 16C6.47202 16 4.43719 15.1571 2.9369 13.6569C1.4366 12.1566 0.59375 10.1217 0.59375 8C0.59375 5.87827 1.4366 3.84344 2.9369 2.34315C4.43719 0.842855 6.47202 0 8.59375 0ZM7.84375 3.75V8C7.84375 8.25 7.96875 8.48438 8.17812 8.625L11.1781 10.625C11.5219 10.8562 11.9875 10.7625 12.2188 10.4156C12.45 10.0687 12.3562 9.60625 12.0094 9.375L9.34375 7.6V3.75C9.34375 3.33437 9.00937 3 8.59375 3C8.17812 3 7.84375 3.33437 7.84375 3.75Z" fill="#3ABEF9" />
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_2_170">
+                            <path d="M0.59375 0H16.5938V16H0.59375V0Z" fill="white" />
+                        </clipPath>
+                    </defs>
+                </svg>
+
+                <span class="footer-pill-text">Usually takes 1–2 business days</span>
+            </div>
+            <p class="footer-text" style="color:black">
+                We'll notify you as soon as your school is added to our platform.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    :root {
+        --primary: #3B82F6;          /* refined blue (screenshot-ish) */
+        --primary-hover: #1C7ED6;
+        --success: #27C46D;          /* green badge */
+        --input-border: #E5E7EB;
+        --input-border-focus: var(--primary);
+        --input-bg: #FFFFFF;
+        --input-bg-focus: #FFFFFF;
+        --text-main: #000000;
+        --text-secondary: #666666;
+        --text-label: #333333;
+        --text-placeholder: #AAAAAA;
+        --radius-input: 12px;
+        --radius-pill: 16px;
+        --page-width: 375px;
+    }
+
+    .add-school-container {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #FFFFFF;
+        min-height: 100vh;
+        width: var(--page-width);
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .header-section {
+        padding: 16px 20px 0;
+        margin-top: 16px; /* tighter, closer to screenshot */
+        display: flex;
+        align-items: center;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        line-height: 0;
+    }
+
+    .back-button:hover {
+        background-color: #f5f5f5;
+    }
+
+    .illustration-section {
+        display: flex;
+        justify-content: center;
+        margin: 16px 0 32px;
+        padding: 0 20px;
+    }
+
+    /* Outer pastel halo box */
+   .school-illustration {
+    --illus-size: 160px;
+    position: relative;
+    width: var(--illus-size);
+    height: var(--illus-size);
+    border-radius: 24px;
+    background: white;
+    padding: 0;       /* Remove extra padding */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08); /* Soft shadow like reference image */
+    display: block;
+    align-items: center;
+    justify-content: center;
+}
+
+    .image-wrapper {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 16px;
+        display: ;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .school-image {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        border-radius: 16px;
+    }
+
+
+    /* Floating green badge offset slightly outside corner like screenshot */
+    .location-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--success);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+            0 2px 4px rgba(0,0,0,0.08),
+            0 0 0 2px rgba(255,255,255,0.9);
+    }
+
+    .content-section {
+        padding: 0 24px;
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .main-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #111827; 
+        line-height: 1.3;
+        margin: 0 0 16px;
+    }
+
+    .description {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .form-section {
+        padding: 0 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-label);
+        margin-bottom: 8px;
+    }
+
+    .optional {
+        font-weight: 400;
+        color: #999999;
+    }
+
+    .form-input {
+        width: 100%;
+        height: 52px;
+        padding: 12px 16px;
+        border: 1px solid var(--input-border);
+        border-radius: var(--radius-input);
+        font-size: 16px;
+        color: var(--text-label);
+        background-color: var(--input-bg);
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--input-border-focus);
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+        background-color: var(--input-bg-focus);
+    }
+
+    .form-input::placeholder {
+        color: var(--text-placeholder);
+    }
+
+    .button-section {
+        padding: 0 24px;
+        margin-bottom: 32px;
+    }
+
+    .request-button {
+        width: 100%;
+        height: 52px;
+        background-color: #00BFFF;
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 3px 8px rgba(59,130,246,0.35);
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    
+
+    .footer-section {
+        padding: 0 24px 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin-top: auto;
+        text-align: center;
+    }
+
+    /* Pill styled like screenshot callout */
+    .footer-card {
+        background: #3ABEF91A;
+        padding: 16px;
+        border-radius: 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .footer-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1C7ED6;
+        background: transparent;
+    }
+
+    .footer-pill-text{
+        color: #3ABEF9;
+    }
+
+    .clock-icon {
+        display: inline-block;
+    }
+
+    .footer-text {
+        font-size: 14px;
+        color: #1C7ED6;
+        line-height: 1.4;
+        margin: 0;
+        max-width: 280px;
+        text-align: center;
+    }
+
+    .error-message-container {
+        padding: 0 24px;
+        margin-bottom: 16px;
+    }
+
+    .error-message {
+        color: #EF4444;
+        font-size: 14px;
+        background-color: #FEE2E2;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 0;
+        text-align: center;
+    }
+
+    .request-button:disabled {
+        background-color: #9CA3AF;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+</style>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Email { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? SchoolName { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? FirstName { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? LastName { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Password { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? SelectedGrade { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? DateOfBirth { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ParentEmail { get; set; }
+
+    [Inject]
+    private GateSale.Services.Interfaces.ISchoolService SchoolService { get; set; } = default!;
+
+    [Inject]
+    private GateSale.Services.Interfaces.IUserService UserService { get; set; } = default!;
+
+    private string _schoolName = string.Empty;
+    private string City = string.Empty;
+    private string _studentEmail = string.Empty;
+    private string ContactPerson = string.Empty;
+    private bool isProcessing = false;
+    private string errorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(SchoolName)) _schoolName = SchoolName;
+        if (!string.IsNullOrEmpty(Email)) _studentEmail = Email;
+    }
+
+    private string SchoolNameInput
+    {
+        get => _schoolName;
+        set => _schoolName = value;
+    }
+
+    private string StudentEmail
+    {
+        get => _studentEmail;
+        set => _studentEmail = value;
+    }
+
+    private bool IsSubmitDisabled =>
+        isProcessing ||
+        string.IsNullOrWhiteSpace(SchoolNameInput) ||
+        string.IsNullOrWhiteSpace(City) ||
+        string.IsNullOrWhiteSpace(StudentEmail);
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/signup", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private async Task RequestSchoolAccess()
+    {
+        if (IsSubmitDisabled) return;
+
+        isProcessing = true;
+        errorMessage = "";
+
+        try
+        {
+            // Submit school request to backend
+            var requestResult = await SchoolService.RequestSchoolAsync(SchoolNameInput, City, StudentEmail, ContactPerson);
+            
+            if (!requestResult.Success)
+            {
+                errorMessage = requestResult.Message;
+                return;
+            }
+            
+            // If we have registration data, perform registration
+            if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(Password))
+            {
+                var user = new GateSale.Models.User
+                {
+                    FirstName = FirstName,
+                    LastName = LastName ?? "",
+                    Email = StudentEmail,
+                    SchoolId = SchoolNameInput, // Use school name as ID for now since it's pending
+                    Grade = SelectedGrade ?? "",
+                    DateOfBirth = DateTime.TryParse(DateOfBirth, out var dob) ? dob : DateTime.Today.AddYears(-15),
+                    PhoneNumber = ParentEmail ?? "" // Using PhoneNumber field temporarily to pass ParentEmail to UserService
+                };
+
+                var result = await UserService.RegisterUserAsync(user, Password);
+
+                if (result.Success)
+                {
+                    // Navigate to verification page
+                    TransitionService.RequestTransition($"/verification-code?email={StudentEmail}&mode=register&parentEmail={Uri.EscapeDataString(ParentEmail ?? "")}", GateSale.Services.TransitionType.SlideLeft);
+                }
+                else
+                {
+                    errorMessage = result.Message;
+                }
+            }
+            else
+            {
+                // If no registration data (e.g. accessed directly), just go back to signup with a success message
+                TransitionService.RequestTransition($"/signup?email={Uri.EscapeDataString(StudentEmail)}&schoolName={Uri.EscapeDataString(SchoolNameInput)}", GateSale.Services.TransitionType.SlideRight);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}

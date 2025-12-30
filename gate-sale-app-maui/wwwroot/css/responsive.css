@@ -1,0 +1,302 @@
+/* GateSale Responsive Design System */
+
+/* Base responsive container styles */
+.responsive-container {
+    max-width: 375px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* Responsive bottom navigation */
+.responsive-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 375px;
+    background: white;
+    border-top: 1px solid #E5E7EB;
+    z-index: 1000;
+}
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 375px) {
+    .responsive-container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    
+    .responsive-padding {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+    
+    .responsive-bottom-nav {
+        width: 100vw;
+        left: 0;
+        transform: none;
+        max-width: none;
+    }
+    
+    .responsive-form {
+        max-width: 100% !important;
+    }
+    
+    .responsive-button {
+        max-width: 100% !important;
+    }
+}
+
+@media (min-width: 376px) and (max-width: 768px) {
+    .responsive-container {
+        max-width: 375px;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .responsive-bottom-nav {
+        width: 375px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+@media (min-width: 769px) {
+    .responsive-container {
+        max-width: 375px;
+        margin: 0 auto;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .responsive-bottom-nav {
+        width: 375px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* Responsive utilities */
+.responsive-text-small {
+    font-size: 14px;
+}
+
+.responsive-text-medium {
+    font-size: 16px;
+}
+
+.responsive-text-large {
+    font-size: 18px;
+}
+
+@media (max-width: 375px) {
+    .responsive-text-small {
+        font-size: 13px;
+    }
+    
+    .responsive-text-medium {
+        font-size: 15px;
+    }
+    
+    .responsive-text-large {
+        font-size: 17px;
+    }
+}
+
+/* Responsive spacing */
+.responsive-spacing-small {
+    padding: 12px;
+}
+
+.responsive-spacing-medium {
+    padding: 20px;
+}
+
+.responsive-spacing-large {
+    padding: 24px;
+}
+
+@media (max-width: 375px) {
+    .responsive-spacing-small {
+        padding: 8px;
+    }
+    
+    .responsive-spacing-medium {
+        padding: 16px;
+    }
+    
+    .responsive-spacing-large {
+        padding: 20px;
+    }
+}
+
+/* Responsive grid */
+.responsive-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 375px) {
+    .responsive-grid-2 {
+        gap: 12px;
+    }
+}
+
+/* Responsive flex */
+.responsive-flex {
+    display: flex;
+    gap: 16px;
+}
+
+@media (max-width: 375px) {
+    .responsive-flex {
+        gap: 12px;
+    }
+}
+
+/* Responsive images */
+.responsive-image {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Responsive buttons */
+.responsive-button-full {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+@media (max-width: 375px) {
+    .responsive-button-full {
+        max-width: 100%;
+        padding: 14px;
+        font-size: 15px;
+    }
+}
+
+/* Responsive forms */
+.responsive-form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+@media (max-width: 375px) {
+    .responsive-form-input {
+        padding: 10px 14px;
+        font-size: 15px;
+    }
+}
+
+/* Responsive cards */
+.responsive-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 375px) {
+    .responsive-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+}
+
+/* Responsive navigation */
+.responsive-nav-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+@media (max-width: 375px) {
+    .responsive-nav-item {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Responsive scrollable containers */
+.responsive-scroll-horizontal {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.responsive-scroll-horizontal::-webkit-scrollbar {
+    display: none;
+}
+
+/* Responsive safe areas for mobile devices */
+@supports (padding: max(0px)) {
+    .responsive-safe-top {
+        padding-top: max(20px, env(safe-area-inset-top));
+    }
+    
+    .responsive-safe-bottom {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    
+    .responsive-safe-left {
+        padding-left: max(20px, env(safe-area-inset-left));
+    }
+    
+    .responsive-safe-right {
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+}
+
+/* Responsive visibility */
+@media (max-width: 375px) {
+    .hide-on-small {
+        display: none !important;
+    }
+}
+
+@media (min-width: 376px) {
+    .show-on-small-only {
+        display: none !important;
+    }
+}
+
+/* Responsive layout helpers */
+.responsive-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.responsive-space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.responsive-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.responsive-row {
+    display: flex;
+    flex-direction: row;
+}
+
+@media (max-width: 375px) {
+    .responsive-row-to-column {
+        flex-direction: column;
+    }
+}

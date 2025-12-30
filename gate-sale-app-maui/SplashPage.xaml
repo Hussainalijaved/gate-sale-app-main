@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GateSale.SplashPage"
+             BackgroundColor="White"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid>
+        <!-- Background with subtle gradient -->
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#FFFFFF" Offset="0.0" />
+                <GradientStop Color="#F8FAFC" Offset="0.5" />
+                <GradientStop Color="#F1F5F9" Offset="1.0" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <!-- Main Content Container -->
+        <StackLayout x:Name="MainContainer" 
+                     VerticalOptions="Center" 
+                     HorizontalOptions="Center"
+                     Opacity="0"
+                     Scale="0.9">
+
+            <!-- Logo Container with elegant shadow -->
+            <Border x:Name="LogoContainer"
+                    WidthRequest="200"
+                    HeightRequest="200"
+                    StrokeShape="RoundRectangle 30"
+                    Padding="30"
+                    BackgroundColor="White"
+                    Stroke="Transparent"
+                    Opacity="0"
+                    Scale="0.8">
+
+                <!-- GateSale Logo -->
+                <Image x:Name="GateSaleLogo" 
+                       Source="gatesale_logo_main.png"
+                       WidthRequest="140"
+                       HeightRequest="140"
+                       HorizontalOptions="Center" 
+                       VerticalOptions="Center" />
+            </Border>
+
+            <!-- App Name with gradient effect -->
+            <StackLayout x:Name="AppNameContainer"
+                         HorizontalOptions="Center"
+                         Margin="0,40,0,0"
+                         Opacity="0"
+                         TranslationY="30">
+
+                <Label x:Name="AppName"
+                       Text="GateSale"
+                       FontSize="32"
+                       FontAttributes="Bold"
+                       TextColor="#1E293B"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center" />
+
+                <!-- Subtitle -->
+                <Label x:Name="Subtitle"
+                       Text="Your Campus Marketplace"
+                       FontSize="16"
+                       TextColor="#64748B"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       Margin="0,8,0,0"
+                       Opacity="0"
+                       TranslationY="20" />
+            </StackLayout>
+
+        </StackLayout>
+
+        <!-- Professional Loading Animation -->
+        <StackLayout x:Name="LoadingContainer"
+                     VerticalOptions="End"
+                     HorizontalOptions="Center"
+                     Margin="0,0,0,100"
+                     Opacity="0">
+
+            <!-- Loading Progress Bar -->
+            <Border x:Name="ProgressBarContainer"
+                    BackgroundColor="#E2E8F0"
+                    StrokeShape="RoundRectangle 10"
+                    WidthRequest="200"
+                    HeightRequest="4"
+                    Padding="0"
+                    Stroke="Transparent">
+
+                <Border x:Name="ProgressBar"
+                        BackgroundColor="#00BFFF"
+                        StrokeShape="RoundRectangle 10"
+                        WidthRequest="0"
+                        HeightRequest="4"
+                        Padding="0"
+                        Stroke="Transparent"
+                        HorizontalOptions="Start" />
+            </Border>
+
+            <!-- Loading Text -->
+            <Label x:Name="LoadingText"
+                   Text="Loading..."
+                   FontSize="14"
+                   TextColor="#64748B"
+                   HorizontalOptions="Center"
+                   Margin="0,16,0,0"
+                   Opacity="0.8" />
+
+        </StackLayout>
+
+        <!-- Decorative Elements -->
+        <Grid x:Name="DecorativeElements" Opacity="0">
+            
+            <!-- Top Left Accent -->
+            <Ellipse Fill="#00BFFF"
+                     WidthRequest="80"
+                     HeightRequest="80"
+                     HorizontalOptions="Start"
+                     VerticalOptions="Start"
+                     Margin="50,100,0,0"
+                     Opacity="0.1" />
+
+            <!-- Top Right Accent -->
+            <Ellipse Fill="#FF6B6B"
+                     WidthRequest="60"
+                     HeightRequest="60"
+                     HorizontalOptions="End"
+                     VerticalOptions="Start"
+                     Margin="0,150,60,0"
+                     Opacity="0.1" />
+
+            <!-- Bottom Left Accent -->
+            <Ellipse Fill="#4ECDC4"
+                     WidthRequest="100"
+                     HeightRequest="100"
+                     HorizontalOptions="Start"
+                     VerticalOptions="End"
+                     Margin="30,0,0,120"
+                     Opacity="0.08" />
+
+            <!-- Bottom Right Accent -->
+            <Ellipse Fill="#00BFFF"
+                     WidthRequest="70"
+                     HeightRequest="70"
+                     HorizontalOptions="End"
+                     VerticalOptions="End"
+                     Margin="0,0,40,80"
+                     Opacity="0.1" />
+
+        </Grid>
+
+        <!-- Floating Particles -->
+        <Grid x:Name="ParticlesContainer" Opacity="0">
+            
+            <!-- Particle 1 -->
+            <Ellipse x:Name="Particle1"
+                     Fill="#00BFFF"
+                     WidthRequest="4"
+                     HeightRequest="4"
+                     HorizontalOptions="Start"
+                     VerticalOptions="Start"
+                     Margin="100,200,0,0"
+                     Opacity="0.6" />
+
+            <!-- Particle 2 -->
+            <Ellipse x:Name="Particle2"
+                     Fill="#FF6B6B"
+                     WidthRequest="3"
+                     HeightRequest="3"
+                     HorizontalOptions="End"
+                     VerticalOptions="Start"
+                     Margin="0,300,120,0"
+                     Opacity="0.5" />
+
+            <!-- Particle 3 -->
+            <Ellipse x:Name="Particle3"
+                     Fill="#4ECDC4"
+                     WidthRequest="5"
+                     HeightRequest="5"
+                     HorizontalOptions="Start"
+                     VerticalOptions="End"
+                     Margin="150,0,0,200"
+                     Opacity="0.4" />
+
+            <!-- Particle 4 -->
+            <Ellipse x:Name="Particle4"
+                     Fill="#00BFFF"
+                     WidthRequest="3"
+                     HeightRequest="3"
+                     HorizontalOptions="End"
+                     VerticalOptions="End"
+                     Margin="0,0,150,250"
+                     Opacity="0.7" />
+
+        </Grid>
+    </Grid>
+</ContentPage>

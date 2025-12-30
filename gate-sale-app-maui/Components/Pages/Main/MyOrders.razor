@@ -1,0 +1,737 @@
+@page "/my-orders"
+@inject NavigationManager Navigation
+@inject IOrderService OrderService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Collections.Generic
+@using System.Linq
+
+<div class="my-orders-container">
+    <!-- Header with back button -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">My Orders</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab @(activeTab == "all" ? "active" : "")" @onclick="@(() => SetActiveTab("all"))">
+                All
+            </button>
+            <button class="tab @(activeTab == "processing" ? "active" : "")" @onclick="@(() => SetActiveTab("processing"))">
+                Processing
+            </button>
+            <button class="tab @(activeTab == "delivered" ? "active" : "")" @onclick="@(() => SetActiveTab("delivered"))">
+                Delivered
+            </button>
+            <button class="tab @(activeTab == "cancelled" ? "active" : "")" @onclick="@(() => SetActiveTab("cancelled"))">
+                Cancelled
+            </button>
+            <button class="tab @(activeTab == "return" ? "active" : "")" @onclick="@(() => SetActiveTab("return"))">
+                Return
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading your orders...</p>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="error-state">
+                <p>@errorMessage</p>
+                <button class="btn-primary" @onclick="LoadOrders">Retry</button>
+            </div>
+        }
+        else if (filteredOrders.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M53.3333 21.3333H10.6667L8 10.6667H2.66667" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10.6667 21.3333L13.3333 42.6667H48L53.3333 21.3333H10.6667Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="18.6667" cy="53.3333" r="2.66667" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="42.6667" cy="53.3333" r="2.66667" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>No @GetTabDisplayName() orders</h3>
+                <p>@GetEmptyStateMessage()</p>
+                <button class="btn-primary" @onclick="StartShopping">Start Shopping</button>
+            </div>
+        }
+        else
+        {
+            <div class="orders-list">
+                @foreach (var order in filteredOrders)
+                {
+                    <div class="order-card">
+                        <div class="seller-info">
+                            <div class="seller-details">
+                                <span class="seller-name">Order #@order.OrderNumber</span>
+                                <span class="order-id-date">@order.OrderDate.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="order-status @GetStatusClass(order.Status)">
+                                @order.Status.ToString()
+                            </div>
+                        </div>
+                        
+                        <div class="order-content">
+                            <div class="product-image">
+                                <img src="@order.ProductImageUrl" alt="@order.ProductTitle" />
+                            </div>
+                            <div class="product-details">
+                                <h3 class="product-name">@order.ProductTitle</h3>
+                                <div class="product-price">R @order.TotalAmount</div>
+                            </div>
+                        </div>
+                        
+                        <div class="order-date-row">
+                            <span class="date-label">@order.OrderDate.ToString("MMM dd, yyyy")</span>
+                            @if (order.Status == OrderStatus.DisputeInProgress)
+                            {
+                                <button class="action-button view-details" @onclick="@(() => ManageDispute(order.Id.ToString()))">Manage Dispute</button>
+                            }
+                            else if (order.Status == OrderStatus.AwaitingPayment)
+                            {
+                                <button class="action-button view-details disabled" disabled>Waiting for Payment</button>
+                            }
+                            else if (order.Status == OrderStatus.PaidAwaitingShipment)
+                            {
+                                <button class="action-button update-status" @onclick="@(() => UpdateOrderStatus(order.Id.ToString()))">Update Status</button>
+                            }
+                            else
+                            {
+                                <button class="action-button view-details" @onclick="@(() => ViewOrderDetails(order.Id.ToString()))">View Details</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .my-orders-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+        background-color: white;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .tabs-container {
+        background-color: #F9FAFB;
+        border-bottom: 1px solid #F3F4F6;
+        padding: 0 16px;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        background: none;
+        border: none;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6B7280;
+        cursor: pointer;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin: 8px 4px;
+    }
+
+    .tab.active {
+        background-color: #3ABEF9;
+        color: white;
+    }
+
+    .tab:hover:not(.active) {
+        color: #374151;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #F9FAFB;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        height: 400px;
+    }
+
+    .empty-icon {
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: #111827;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #6B7280;
+        margin: 0 0 24px 0;
+    }
+
+    .btn-primary {
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #2AA8E0;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background-color: #F3F4F6;
+        color: #374151;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background-color: #E5E7EB;
+    }
+
+    .btn-danger {
+        background-color: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: #FECACA;
+    }
+
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .order-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #F3F4F6;
+        /* margin-bottom: 16px; */
+    }
+
+    .seller-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .seller-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .seller-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .order-id-date {
+        font-size: 12px;
+        color: #6B7280;
+    }
+    
+    .order-date-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #F3F4F6;
+    }
+    
+    .date-label {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    .order-status {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .order-status.completed, .order-status.delivered {
+        background-color: #ECFDF5;
+        color: #059669;
+    }
+
+    .order-status.in-progress {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+    
+    .order-status.pending {
+        background-color: #FEF3C7;
+        color: #D97706;
+    }
+
+    .order-status.cancelled {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+    
+    .order-status.return {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .order-status.dispute {
+        background-color: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .progress-container {
+        margin-bottom: 16px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background-color: #F3F4F6;
+        border-radius: 2px;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: #3ABEF9;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #F3F4F6;
+        border: 2px solid #F3F4F6;
+        transition: all 0.2s ease;
+    }
+
+    .step.active .step-dot {
+        background-color: #3ABEF9;
+        border-color: #3ABEF9;
+    }
+
+    .step.completed .step-dot {
+        background-color: #059669;
+        border-color: #059669;
+    }
+
+    .step-label {
+        font-size: 10px;
+        color: #6B7280;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .step.active .step-label,
+    .step.completed .step-label {
+        color: #111827;
+        font-weight: 600;
+    }
+
+    .order-content {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .product-image {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background-color: #F3F4F6;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .product-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .quantity-info {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 2px 0;
+    }
+
+    .product-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin-top: 2px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .action-button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .view-details {
+        background-color: #3ABEF9;
+        color: white;
+    }
+    
+    .update-status {
+        background-color: #3ABEF9;
+        color: white;
+    }
+    
+    .cancel-order {
+        background-color: #E5E7EB;
+        color: #4B5563;
+    }
+    
+    .accept-order {
+        background-color: #10B981;
+        color: white;
+    }
+</style>
+
+@code {
+    private List<OrderSummaryDto> allOrders = new List<OrderSummaryDto>();
+    private List<OrderSummaryDto> filteredOrders = new List<OrderSummaryDto>();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string activeTab = "all";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            allOrders = await OrderService.GetSellerOrdersAsync();
+            FilterOrders();
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load orders. Please try again.";
+            Console.WriteLine($"Error loading orders: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        FilterOrders();
+    }
+
+    private void FilterOrders()
+    {
+        filteredOrders = activeTab switch
+        {
+            "processing" => allOrders.Where(o => o.Status == OrderStatus.PaidAwaitingShipment || o.Status == OrderStatus.InTransit).ToList(),
+            "delivered" => allOrders.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Completed || o.Status == OrderStatus.Collected || o.Status == OrderStatus.BuyerApproved).ToList(),
+            "cancelled" => allOrders.Where(o => o.Status == OrderStatus.CancelledBySeller).ToList(),
+            "return" => allOrders.Where(o => o.Status == OrderStatus.AwaitingReturn || o.Status == OrderStatus.ReturnInTransit || o.Status == OrderStatus.ReturnDelivered || o.Status == OrderStatus.ReturnCollected).ToList(),
+            _ => allOrders.ToList()
+        };
+        StateHasChanged();
+    }
+
+    private string GetStatusClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.PaidAwaitingShipment => "pending",
+            OrderStatus.InTransit => "in-progress",
+            OrderStatus.Delivered => "delivered",
+            OrderStatus.Completed => "delivered",
+            OrderStatus.Collected => "delivered",
+            OrderStatus.BuyerApproved => "delivered",
+            OrderStatus.CancelledBySeller => "cancelled",
+            OrderStatus.AwaitingReturn => "return",
+            OrderStatus.ReturnInTransit => "return",
+            OrderStatus.ReturnDelivered => "return",
+            OrderStatus.ReturnCollected => "return",
+            OrderStatus.AwaitingPayment => "in-progress",
+            OrderStatus.DisputeInProgress => "dispute",
+            _ => "in-progress"
+        };
+    }
+
+    private int GetProgressWidth(string status)
+    {
+        return status switch
+        {
+            "Processing" => 25,
+            "Shipped" => 75,
+            "Delivered" => 100,
+            "Cancelled" => 0,
+            _ => 0
+        };
+    }
+
+    private string GetStepStatus(string orderStatus, int stepNumber)
+    {
+        return orderStatus switch
+        {
+            "Processing" => stepNumber <= 2 ? (stepNumber == 2 ? "active" : "completed") : "",
+            "Shipped" => stepNumber <= 3 ? (stepNumber == 3 ? "active" : "completed") : "",
+            "Delivered" => stepNumber <= 4 ? "completed" : "",
+            "Cancelled" => stepNumber == 1 ? "completed" : "",
+            _ => stepNumber == 1 ? "active" : ""
+        };
+    }
+
+    private string GetTabDisplayName()
+    {
+        return activeTab switch
+        {
+            "processing" => "processing",
+            "delivered" => "delivered",
+            "cancelled" => "cancelled",
+            "return" => "return",
+            _ => ""
+        };
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        return activeTab switch
+        {
+            "processing" => "You don't have any processing orders",
+            "delivered" => "You don't have any delivered orders",
+            "cancelled" => "You don't have any cancelled orders",
+            "return" => "You don't have any return orders",
+            _ => "You haven't placed any orders yet"
+        };
+    }
+    
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private void StartShopping()
+    {
+        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ViewOrderDetails(string orderId)
+    {
+        TransitionService.RequestTransition($"/order-details/{orderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void TrackPackage(string trackingNumber)
+    {
+        Console.WriteLine($"Track package: {trackingNumber}");
+        // TODO: Navigate to package tracking page
+    }
+
+    private void CancelOrder(string orderId)
+    {
+        Console.WriteLine($"Cancel order: {orderId}");
+        // TODO: Show confirmation dialog and cancel order
+    }
+
+    private void ReorderItem(string productId)
+    {
+        TransitionService.RequestTransition($"/pagedetails/{productId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+    
+    private void UpdateOrderStatus(string orderId)
+    {
+        TransitionService.RequestTransition($"/order-details/{orderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+    
+    private void AcceptOrder(string orderId)
+    {
+        Console.WriteLine($"Accept order: {orderId}");
+        // TODO: Accept the order and update its status
+    }
+
+    private void ManageDispute(string orderId)
+    {
+        TransitionService.RequestTransition($"/dispute/{orderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+}
+

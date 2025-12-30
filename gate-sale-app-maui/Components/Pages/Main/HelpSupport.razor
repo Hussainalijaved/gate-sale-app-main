@@ -1,0 +1,279 @@
+@page "/help-support"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+<div class="help-support-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Help & Support</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Email Us Section -->
+        <div class="email-us-section" @onclick="EmailSupport">
+            <div class="email-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white"/>
+                </svg>
+            </div>
+            <div class="email-content">
+                <h2 class="email-title">Email Us</h2>
+                <p class="email-subtitle">We'll respond soon</p>
+            </div>
+        </div>
+
+        <!-- Help Categories -->
+        <div class="section-container">
+            <h2 class="section-title">Help Categories</h2>
+            
+            <div class="list-item" @onclick="NavigateToAccountProfile">
+                <div class="list-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="7" r="4" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="list-content">
+                    <h3 class="list-title">Account & Profile</h3>
+                    <p class="list-subtitle">Settings, privacy, verification</p>
+                </div>
+                <div class="list-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Questions -->
+        <div class="section-container">
+            <h2 class="section-title">Popular Questions</h2>
+            
+            <div class="list-item" @onclick="NavigateToResetPassword">
+                <div class="list-content">
+                    <h3 class="list-title">How do I reset my password?</h3>
+                    <p class="list-subtitle">Step-by-step guide to recover your account</p>
+                </div>
+                <div class="list-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="list-item" @onclick="NavigateToAccountSuspended">
+                <div class="list-content">
+                    <h3 class="list-title">Why was my account suspended?</h3>
+                    <p class="list-subtitle">Common reasons and how to appeal</p>
+                </div>
+                <div class="list-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="list-item" @onclick="NavigateToCancelSubscription">
+                <div class="list-content">
+                    <h3 class="list-title">How to cancel my subscription?</h3>
+                    <p class="list-subtitle">Cancel anytime in your account settings</p>
+                </div>
+                <div class="list-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .help-support-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #F9FAFB;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: white;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+    }
+
+    .email-us-section {
+        display: flex;
+        align-items: center;
+        background-color: #4ADE80;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        cursor: pointer;
+    }
+
+    .email-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+    }
+
+    .email-content {
+        flex: 1;
+    }
+
+    .email-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        margin: 0 0 4px 0;
+    }
+
+    .email-subtitle {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    .section-container {
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 12px 4px;
+    }
+
+    .list-item {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .list-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #FFF7ED;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+    }
+
+    .list-content {
+        flex: 1;
+    }
+
+    .list-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 4px 0;
+    }
+
+    .list-subtitle {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .list-arrow {
+        color: #9CA3AF;
+    }
+</style>
+
+@code {
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private void EmailSupport()
+    {
+        // Implement email support functionality
+        Console.WriteLine("Email support clicked");
+    }
+
+    private void NavigateToAccountProfile()
+    {
+        TransitionService.RequestTransition("/help/account-profile", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void NavigateToResetPassword()
+    {
+        TransitionService.RequestTransition("/help/reset-password", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void NavigateToAccountSuspended()
+    {
+        TransitionService.RequestTransition("/help/account-suspended", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void NavigateToCancelSubscription()
+    {
+        TransitionService.RequestTransition("/help/cancel-subscription", GateSale.Services.TransitionType.SlideLeft);
+    }
+}

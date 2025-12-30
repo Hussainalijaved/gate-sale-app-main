@@ -1,0 +1,480 @@
+@page "/buyers-help"
+@inject NavigationManager Navigation
+@inject ProductCreationService ProductCreationService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services
+
+<div class="buyers-help-container">
+    <!-- Header -->
+    <div class="header-section">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+       
+    </div>
+
+    <!-- Header Separator Line -->
+    <div class="header-separator"></div>
+
+    <!-- Main Content Section -->
+    <div class="main-content-section">
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1 class="page-title">Help Buyers Find Your Item</h1>
+            <p class="page-subtitle">Add a title and description to make your listing more discoverable</p>
+        </div>
+
+        <!-- Message Icon -->
+        <div class="message-icon-section">
+            <img src="/images/message.png" alt="Message" class="message-icon" />
+        </div>
+
+        <!-- Product Title Section -->
+        <div class="form-section">
+            <label class="form-label">Keywords</label>
+            <div class="input-container">
+                <input type="text" class="form-input" placeholder="e.g. iPhone 13 Pro Max 256GB" @bind="keywords" @oninput="UpdateKeywords" maxlength="80" />
+                <div class="input-icon">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_2_925)">
+                            <g clip-path="url(#clip1_2_925)">
+                                <path d="M10.7812 1.22187L14.775 5.2625C16.4125 6.91875 16.4125 9.58125 14.775 11.2375L11.275 14.7781C10.9844 15.0719 10.5094 15.075 10.2156 14.7844C9.92188 14.4938 9.91875 14.0188 10.2094 13.725L13.7063 10.1844C14.7656 9.1125 14.7656 7.39062 13.7063 6.31875L9.71562 2.27813C9.425 1.98438 9.42813 1.50937 9.72188 1.21875C10.0156 0.928125 10.4906 0.93125 10.7812 1.225V1.22187ZM0 7.17188V2.5C0 1.67188 0.671875 1 1.5 1H6.17188C6.70312 1 7.2125 1.20938 7.5875 1.58438L12.8375 6.83437C13.6187 7.61562 13.6187 8.88125 12.8375 9.6625L8.66562 13.8344C7.88437 14.6156 6.61875 14.6156 5.8375 13.8344L0.5875 8.58438C0.209375 8.20938 0 7.70312 0 7.17188ZM4.5 4.5C4.5 4.23478 4.39464 3.98043 4.20711 3.79289C4.01957 3.60536 3.76522 3.5 3.5 3.5C3.23478 3.5 2.98043 3.60536 2.79289 3.79289C2.60536 3.98043 2.5 4.23478 2.5 4.5C2.5 4.76522 2.60536 5.01957 2.79289 5.20711C2.98043 5.39464 3.23478 5.5 3.5 5.5C3.76522 5.5 4.01957 5.39464 4.20711 5.20711C4.39464 5.01957 4.5 4.76522 4.5 4.5Z" fill="#D1D5DB" />
+                            </g>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_2_925">
+                                <rect width="16" height="16" fill="white" />
+                            </clipPath>
+                            <clipPath id="clip1_2_925">
+                                <path d="M0 0H16V16H0V0Z" fill="white" />
+                            </clipPath>
+                        </defs>
+                    </svg>
+
+                </div>
+            </div>
+            <div class="title-footer">
+                <p class="helper-text">Be specific and include key details like brand, model, size</p>
+                <div class="character-count-container">
+                    <span class="character-count">@titleCharacterCount/80</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Condition Section -->
+        <div class="form-section">
+            <label class="form-label">Condition</label>
+            <div class="dropdown-container">
+                <select class="form-dropdown" @bind="condition" title="@GetConditionTitle()">
+                    <option value="" disabled selected>Select condition...</option>
+                    <option value="Brand New">Brand New</option>
+                    <option value="Like New">Like New</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                </select>
+                <div class="dropdown-icon">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 6L8 10L12 6" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="condition-description">
+                @if (!string.IsNullOrEmpty(condition))
+                {
+                    <p class="condition-text">@GetConditionDescription(condition)</p>
+                }
+                else
+                {
+                    <p class="helper-text">Select the condition that best describes your item</p>
+                }
+            </div>
+        </div>
+
+        <!-- Description Section -->
+        <div class="form-section">
+            <label class="form-label">Description</label>
+            <div class="textarea-container">
+                <textarea class="form-textarea" placeholder="Tell buyers about your item's condition, why you're selling it, or any special features..." @bind="description" @oninput="UpdateCharacterCount"></textarea>
+                <div class="textarea-icon">
+                    <svg width="14" height="24" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_2_937)">
+                        <path d="M9 5C9 5.55313 8.55313 6 8 6H1C0.446875 6 0 5.55313 0 5C0 4.44687 0.446875 4 1 4H8C8.55313 4 9 4.44687 9 5ZM9 13C9 13.5531 8.55313 14 8 14H1C0.446875 14 0 13.5531 0 13C0 12.4469 0.446875 12 1 12H8C8.55313 12 9 12.4469 9 13ZM0 9C0 8.44688 0.446875 8 1 8H13C13.5531 8 14 8.44688 14 9C14 9.55312 13.5531 10 13 10H1C0.446875 10 0 9.55312 0 9ZM14 17C14 17.5531 13.5531 18 13 18H1C0.446875 18 0 17.5531 0 17C0 16.4469 0.446875 16 1 16H13C13.5531 16 14 16.4469 14 17Z" fill="#D1D5DB"/>
+                        </g>
+                        <defs>
+                    
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+            <div class="description-footer">
+                <p class="helper-text">Be descriptive to attract more buyers</p>
+                <div class="character-count-container">
+                    <span class="character-count">@characterCount/500</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer-section">
+        <!-- Next Button -->
+        <button class="btn-base btn-primary btn-next"
+                @onclick="GoNext"
+                disabled="@(!IsNextButtonEnabled)">
+            Next
+        </button>
+    </div>
+</div>
+
+<style>
+    .buyers-help-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100vh;
+        background-color: white;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 20px 10px 20px;
+        background-color: #FFFFFF;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+   
+
+    
+
+    .header-separator {
+        height: 1px;
+        background-color: #E5E7EB;
+        width: 100%;
+    }
+
+    .main-content-section {
+        flex: 1;
+        padding: 24px 20px;
+        background-color: #00000000;
+    }
+
+    .title-section {
+        margin-bottom: 32px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1F2937;
+        margin: 0 0 8px 0;
+        line-height: 1.2;
+    }
+
+    .page-subtitle {
+        font-size: 16px;
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .message-icon-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 25px;
+    }
+
+    .message-icon {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+    }
+
+    .form-section {
+        margin-bottom: 10px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 8px;
+    }
+
+    .input-container {
+        position: relative;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 16px 48px 16px 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
+        font-size: 16px;
+        background-color: #FFFFFF;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #42A5F5;
+        box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+    }
+
+    .form-input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .textarea-container {
+        position: relative;
+        margin-bottom: 8px;
+    }
+
+    .form-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 16px 40px 16px 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
+        font-size: 16px;
+        background-color: #FFFFFF;
+        box-sizing: border-box;
+        resize: vertical;
+        font-family: inherit;
+        transition: border-color 0.2s ease;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .form-textarea:focus {
+        outline: none;
+        border-color: #42A5F5;
+        box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+    }
+
+    .form-textarea::placeholder {
+        color: #9CA3AF;
+    }
+    
+    .dropdown-container {
+        position: relative;
+        margin-bottom: 16px;
+    }
+    
+    .form-dropdown {
+        width: 100%;
+        padding: 16px 40px 16px 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
+        font-size: 15px;
+        background-color: #FFFFFF;
+        box-sizing: border-box;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        cursor: pointer;
+        color: #1F2937;
+        transition: border-color 0.2s ease;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    
+    .form-dropdown:focus {
+        outline: none;
+        border-color: #42A5F5;
+        box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+    }
+    
+    .form-dropdown option {
+        padding: 10px;
+        font-size: 15px;
+        white-space: normal;
+        max-width: 100%;
+    }
+    
+    .form-dropdown option:first-child {
+        color: #9CA3AF;
+    }
+    
+    .dropdown-icon {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+    
+    .condition-description {
+        margin-top: 8px;
+        margin-bottom: 16px;
+    }
+    
+    .condition-text {
+        font-size: 14px;
+        color: #4B5563;
+        margin: 0;
+        line-height: 1.4;
+        font-style: italic;
+    }
+
+    .title-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+    }
+
+    .description-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+    }
+
+    .character-count-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .character-count {
+        font-size: 12px;
+        color: #9CA3AF;
+        font-weight: 500;
+    }
+
+    .helper-text {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .footer-section {
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-top: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+
+
+   
+</style>
+
+@code {
+    private string keywords = "";
+    private string description = "";
+    private string condition = "";
+    private int characterCount = 0;
+    private int titleCharacterCount = 0;
+
+    private bool IsNextButtonEnabled => !string.IsNullOrWhiteSpace(keywords) && 
+                                       keywords.Trim().Length >= 3 && 
+                                       !string.IsNullOrWhiteSpace(description) && 
+                                       !string.IsNullOrWhiteSpace(condition);
+                                       
+    private string GetConditionTitle()
+    {
+        return condition switch
+        {
+            "Brand New" => "Brand New - Never used, still in original packaging (if applicable)",
+            "Like New" => "Like New - Used once or twice, no visible wear",
+            "Excellent" => "Excellent - Gently used, fully functional, very minor signs of use",
+            "Good" => "Good - Clearly used but in working condition, small marks or wear",
+            "Fair" => "Fair - Heavily used, cosmetic damage, but still usable",
+            _ => "Select condition..."
+        };
+    }
+    
+    private string GetConditionDescription(string selectedCondition)
+    {
+        return selectedCondition switch
+        {
+            "Brand New" => "Never used, still in original packaging (if applicable)",
+            "Like New" => "Used once or twice, no visible wear",
+            "Excellent" => "Gently used, fully functional, very minor signs of use",
+            "Good" => "Clearly used but in working condition, small marks or wear",
+            "Fair" => "Heavily used, cosmetic damage, but still usable",
+            _ => ""
+        };
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/add-photos-videos", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private void UpdateKeywords(ChangeEventArgs e)
+    {
+        keywords = e.Value?.ToString() ?? "";
+        titleCharacterCount = keywords.Length;
+
+        if (titleCharacterCount > 80)
+        {
+            keywords = keywords.Substring(0, 80);
+            titleCharacterCount = 80;
+        }
+
+        StateHasChanged();
+    }
+
+    private void UpdateCharacterCount(ChangeEventArgs e)
+    {
+        description = e.Value?.ToString() ?? "";
+        characterCount = description.Length;
+        if (characterCount > 500)
+        {
+            description = description.Substring(0, 500);
+            characterCount = 500;
+        }
+        StateHasChanged();
+    }
+
+    private void GoNext()
+    {
+        if (IsNextButtonEnabled)
+        {
+            // Save title, description, and condition to ProductCreationService
+            ProductCreationService.SetTitleAndDescription(keywords.Trim(), description);
+            ProductCreationService.SetAdditionalDetails(string.Empty, string.Empty, condition);
+            TransitionService.RequestTransition("/set-your-price", GateSale.Services.TransitionType.SlideLeft);
+        }
+    }
+}

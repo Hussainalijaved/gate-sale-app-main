@@ -1,0 +1,320 @@
+@page "/onboarding3"
+@inject NavigationManager Navigation
+@inject GateSale.Services.PageTransitionService TransitionService
+
+<div class="onboarding-container">
+    <!-- Progress Indicator -->
+    <div class="progress-indicator">
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step active"></div>
+    </div>
+
+    <!-- Title -->
+    <div class="title-section">
+        <h1 class="main-title">
+            Safe for You — <br>
+            <span class="highlight-text">Peace of Mind</span><br>
+            for Parents
+        </h1>
+    </div>
+
+    <!-- Central Illustration -->
+    <div class="illustration-section">
+        <div class="illustration-circle">
+            <!-- Connecting dotted lines -->
+            <div class="line-to-student"></div>
+            <div class="line-to-parent"></div>
+            <div class="line-to-email"></div>
+
+            <!-- Student Icon (Top Left) -->
+            <div class="icon-student">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3L1 9L12 15L21 9V16H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z" fill="white" />
+                </svg>
+            </div>
+
+            <!-- Parent Icon (Top Right) -->
+            <div class="icon-parent">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 12C14.21 12 16 10.21 16 8S14.21 4 12 4 8 5.79 8 8 9.79 12 12 12M12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="white" />
+                </svg>
+            </div>
+
+            <!-- Question Mark Icon (Center) -->
+            <div class="icon-shield">
+                <svg class="question-svg" width="32" height="32" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="12" fill="#4caf50" stroke="white" stroke-dasharray="2,2" stroke-width="2" />
+                    <path d="M13,19H11V17H13V19ZM15.07,11.25L14.17,12.17C13.45,12.9 13,13.5 13,15H11V14.5
+                             C11,13.4 11.45,12.4 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9
+                             C14,7.9 13.1,7 12,7C10.9,7 10,7.9 10,9H8C8,6.79 9.79,5 12,5C14.21,5
+                             16,6.79 16,9C16,9.88 15.64,10.68 15.07,11.25Z"
+                          fill="white" />
+                </svg>
+            </div>
+
+            <!-- Email Icon (Bottom) -->
+            <div class="icon-email">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features List (Now in Cards) -->
+    <div class="features-section">
+        <!-- Card 1 -->
+        <div class="feature-card">
+            <div class="feature-item">
+                <div class="feature-icon student-verify">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 12C14.21 12 16 10.21 16 8S14.21 4 12 4 8 5.79 8 8 9.79 12 12 12M12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="white" />
+                    </svg>
+                </div>
+                <div class="feature-content">
+                    <h3>We verify every student</h3>
+                    <p>Your school email ensures only verified students can join your marketplace</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="feature-card">
+            <div class="feature-item">
+                <div class="feature-icon parent-consent">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12S8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5S19.66 2 18 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12S4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.34C15.11 18.55 15.08 18.77 15.08 19C15.08 20.61 16.39 21.92 18 21.92S20.92 20.61 20.92 19 19.61 17.08 18 17.08" fill="white" />
+                    </svg>
+                </div>
+                <div class="feature-content">
+                    <h3>Parents give consent before you can start</h3>
+                    <p>We'll send a quick email to get parental approval for buying or selling</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="navigation-section-bottom">
+        <button class="btn-base btn-primary btn-next" @onclick="GetStarted">Get Started</button>
+        <p class="text-disclaimer">By continuing, you agree to our Terms of Service and Privacy Policy</p>
+    </div>
+</div>
+
+<style>
+    .onboarding-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: white;
+        height: 100vh;
+        width: 375px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .progress-indicator {
+        display: flex;
+        gap: 8px;
+        margin-top: 40px;
+        margin-bottom: 30px;
+        justify-content: center;
+    }
+
+    .progress-step {
+        width: 24px;
+        height: 4px;
+        background-color: #e0e0e0;
+        border-radius: 2px;
+    }
+
+        .progress-step.active {
+            background-color: #00bfff;
+        }
+
+    .title-section {
+        margin-bottom: 40px;
+    }
+
+    .main-title {
+        font-size: 28px;
+        font-weight: 900;
+        color: #000;
+        text-align: center;
+        line-height: 1.2;
+        margin: 0;
+    }
+
+    .highlight-text {
+        color: #4ADE80;
+    }
+
+    .illustration-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 50px;
+    }
+
+    .illustration-circle {
+        width: 280px;
+        height: 280px;
+        background: linear-gradient(135deg, #E8F4F8 0%, #F0F8FF 100%);
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .illustration-circle .line-to-student {
+            position: absolute;
+            top: 80px;
+            left: 150px;
+            width: 80px;
+            height: 1px;
+            border-top: 1px dotted #3ABEF94D;
+            transform: rotate(-40deg);
+            transform-origin: left center;
+            z-index: 1;
+        }
+
+        .illustration-circle .line-to-parent {
+            position: absolute;
+            top: 50px;
+            right: 150px;
+            width: 80px;
+            height: 1px;
+            border-top: 2px dotted #3ABEF94D;
+            transform: rotate(40deg);
+            transform-origin: right center;
+            z-index: 1;
+        }
+
+        .illustration-circle .line-to-email {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 45px;
+            border-left: 2px dotted #3ABEF94D;
+            z-index: 1;
+        }
+
+    .icon-student,
+    .icon-parent,
+    .icon-email {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .icon-student {
+        top: 5px;
+        left: 40px;
+        background-color: #E5E7EB;
+    }
+
+    .icon-parent {
+        top: 5px;
+        right: 40px;
+        background-color: #E5E7EB;
+    }
+
+    .icon-email {
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #E5E7EB;
+        border-radius: 12px;
+    }
+
+    .icon-shield {
+        width: 75px;
+        height: 75px;
+        background-color: #E5E7EB;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(229, 231, 235, 0.3);
+        z-index: 2;
+    }
+
+    .features-section {
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 40px;
+    }
+
+    .feature-card {
+        border: 1px solid #ddd;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 20px;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        flex-shrink: 0;
+        margin-top: 4px;
+    }
+
+    .student-verify {
+        background-color: #E5E7EB;
+    }
+
+    .parent-consent {
+        background-color: #E5E7EB;
+    }
+
+    .feature-content h3 {
+        font-size: 16px;
+        font-weight: 800;
+        color: #000;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+    }
+
+    .feature-content p {
+        font-size: 14px;
+        color: #666;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+
+</style>
+
+@code {
+    private void GetStarted()
+    {
+        TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void SkipOnboarding()
+    {
+        TransitionService.RequestTransition("/login", GateSale.Services.TransitionType.Fade);
+    }
+}

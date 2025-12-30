@@ -1,0 +1,256 @@
+@page "/set-your-price"
+@inject NavigationManager Navigation
+@inject ProductCreationService ProductCreationService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services
+
+<div class="set-price-container">
+    <!-- Back Button -->
+    <div class="back-section">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Title -->
+    <div class="title-section">
+        <h1 class="page-title">Set Your Price</h1>
+    </div>
+
+    <!-- Money Icon -->
+    <div class="money-icon-section">
+        <img src="/images/money.png" alt="Money" class="money-icon" />
+    </div>
+
+    <!-- Price Input Section -->
+    <div class="form-section">
+        <label class="form-label">Selling Price (R)</label>
+        <div class="input-container">
+            <input type="text" class="form-input" placeholder="R 0.00" @bind="sellingPrice" @oninput="FormatPrice" />
+        </div>
+        <p class="helper-text">Separate keywords with commas</p>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+        <div class="info-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#42A5F5"/>
+                <path d="M12 16V12M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <p class="info-text">You'll receive the full amount. Delivery costs are handled separately between you and the buyer.</p>
+    </div>
+
+    <!-- Next Button -->
+    <button class="btn-base btn-primary btn-next spacing-medium-top"
+            @onclick="GoNext"
+            disabled="@(!IsNextButtonEnabled)">
+        Next
+    </button>
+</div>
+
+<style>
+    .set-price-container {
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100vh;
+        background-color: #FFFFFF;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .back-section {
+        margin-bottom: 20px;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+    
+
+    .title-section {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .page-title {
+        font-size: 30px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .money-icon-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+
+    .money-icon {
+        width: 130px;
+        height: 130px;
+        object-fit: contain;
+        display: block;
+    }
+
+   
+
+    .form-section {
+        margin-bottom: 32px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 8px;
+    }
+
+    .input-container {
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 16px;
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
+        font-size: 16px;
+        background-color: #FFFFFF;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #42A5F5;
+        box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+    }
+
+    .form-input::placeholder {
+        color: #9CA3AF;
+    }
+
+    .helper-text {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .info-section {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background-color: #F0F9FF;
+        padding: 16px;
+        border-radius: 12px;
+      
+    }
+
+    .info-icon {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .info-text {
+        font-size: 14px;
+        color: #1F2937;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+
+
+   
+</style>
+
+@code {
+    private string sellingPrice = "";
+
+    private bool IsNextButtonEnabled => HasValidPrice();
+
+    private bool HasValidPrice()
+    {
+        if (string.IsNullOrWhiteSpace(sellingPrice))
+            return false;
+
+        // Remove "R " prefix and check if remaining text contains valid digits
+        var priceText = sellingPrice.Replace("R ", "").Trim();
+
+        // Check if it's a valid number and greater than 0
+        if (decimal.TryParse(priceText, out decimal price))
+        {
+            return price > 0;
+        }
+
+        return false;
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/buyers-help", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private void FormatPrice(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString() ?? "";
+        
+        // Remove non-numeric characters except decimal point
+        var numericInput = System.Text.RegularExpressions.Regex.Replace(input, @"[^\d.]", "");
+        
+        // Ensure only one decimal point
+        var parts = numericInput.Split('.');
+        if (parts.Length > 2)
+        {
+            numericInput = parts[0] + "." + string.Join("", parts.Skip(1));
+        }
+        
+        // Limit to 2 decimal places
+        if (parts.Length == 2 && parts[1].Length > 2)
+        {
+            numericInput = parts[0] + "." + parts[1].Substring(0, 2);
+        }
+        
+        // Add R prefix if there's a value
+        if (!string.IsNullOrEmpty(numericInput))
+        {
+            sellingPrice = "R " + numericInput;
+        }
+        else
+        {
+            sellingPrice = "";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void GoNext()
+    {
+        if (IsNextButtonEnabled)
+        {
+            // Extract numeric value for storage
+            var priceText = sellingPrice.Replace("R ", "").Trim();
+            if (decimal.TryParse(priceText, out decimal priceValue))
+            {
+                // Save price to ProductCreationService
+                ProductCreationService.SetPrice(sellingPrice, priceValue);
+                TransitionService.RequestTransition("/review-your-listing", GateSale.Services.TransitionType.SlideLeft);
+            }
+        }
+    }
+}

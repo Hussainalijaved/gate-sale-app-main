@@ -1,0 +1,617 @@
+@page "/my-listings"
+@inject NavigationManager Navigation
+@inject IProductService ProductService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Collections.Generic
+
+<div class="my-listings-container">
+    <!-- Header with back button -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">My Listings</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading your listings...</p>
+            </div>
+        }
+        else if (myListings.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M53.3333 10.6667H10.6667C8.45753 10.6667 6.66667 12.4575 6.66667 14.6667V49.3333C6.66667 51.5425 8.45753 53.3333 10.6667 53.3333H53.3333C55.5425 53.3333 57.3333 51.5425 57.3333 49.3333V14.6667C57.3333 12.4575 55.5425 10.6667 53.3333 10.6667Z" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M24 32L29.3333 37.3333L40 26.6667" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>No listings yet</h3>
+                <p>Items you list for sale will appear here</p>
+                <button class="btn-primary" @onclick="CreateNewListing">Create New Listing</button>
+            </div>
+        }
+        else
+        {
+            <div class="listings-grid">
+                @foreach (var listing in myListings)
+                {
+                    <div class="listing-card">
+                        <div class="listing-image">
+                            <img src="@listing.ImageUrl" alt="@listing.Name" />
+                            <div class="listing-status @GetStatusClass(listing.IsActive)">
+                                <span>@(listing.IsActive ? "Active" : "Sold")</span>
+                            </div>
+                        </div>
+                        <div class="listing-info">
+                            <h3 class="listing-title">@listing.Name</h3>
+                            <p class="listing-price">@listing.Price</p>
+                            <p class="listing-date">Listed on @listing.CreatedAt.ToString("MMM dd, yyyy")</p>
+                        </div>
+                        <div class="listing-actions">
+                            <button class="btn-icon" @onclick="() => EditListing(listing.Id)" title="Edit">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14.1667 2.5C14.3855 2.28113 14.6455 2.10752 14.9326 1.98906C15.2198 1.87061 15.5275 1.80976 15.8384 1.80976C16.1493 1.80976 16.457 1.87061 16.7441 1.98906C17.0312 2.10752 17.2913 2.28113 17.51 2.5C17.7289 2.71887 17.9025 2.97892 18.0209 3.26608C18.1394 3.55324 18.2002 3.86091 18.2002 4.17186C18.2002 4.4828 18.1394 4.79047 18.0209 5.07763C17.9025 5.36479 17.7289 5.62484 17.51 5.84371L6.25001 17.1037L1.66667 18.3337L2.89667 13.7504L14.1667 2.5Z" stroke="#4B5563" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon delete" @onclick="() => ShowDeleteConfirmation(listing.Id, listing.Name)" title="Delete">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2.5 5H4.16667H17.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M6.66667 5.00033V3.33366C6.66667 2.89163 6.84226 2.46771 7.15482 2.15515C7.46738 1.84259 7.8913 1.66699 8.33333 1.66699H11.6667C12.1087 1.66699 12.5326 1.84259 12.8452 2.15515C13.1577 2.46771 13.3333 2.89163 13.3333 3.33366V5.00033M15.8333 5.00033V16.667C15.8333 17.109 15.6577 17.5329 15.3452 17.8455C15.0326 18.1581 14.6087 18.3337 14.1667 18.3337H5.83333C5.3913 18.3337 4.96738 18.1581 4.65482 17.8455C4.34226 17.5329 4.16667 17.109 4.16667 16.667V5.00033H15.8333Z" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8.33333 9.16699V14.167" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M11.6667 9.16699V14.167" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirmation)
+{
+    <div class="modal-overlay" @onclick="CancelDelete">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                    <circle cx="24" cy="24" r="22" stroke="#EF4444" stroke-width="2"/>
+                    <path d="M24 16V26" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="24" cy="32" r="2" fill="#EF4444"/>
+                </svg>
+            </div>
+            <h3>Delete Listing?</h3>
+            <p>Are you sure you want to delete "@listingToDeleteName"? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="CancelDelete" disabled="@isDeleting">Cancel</button>
+                <button class="btn-delete" @onclick="ConfirmDelete" disabled="@isDeleting">
+                    @if (isDeleting)
+                    {
+                        <span class="btn-spinner"></span>
+                        <span>Deleting...</span>
+                    }
+                    else
+                    {
+                        <span>Delete</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Success Message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="success-banner">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 18.3333C14.6024 18.3333 18.3333 14.6024 18.3333 10C18.3333 5.39763 14.6024 1.66667 10 1.66667C5.39763 1.66667 1.66667 5.39763 1.66667 10C1.66667 14.6024 5.39763 18.3333 10 18.3333Z" stroke="#10B981" stroke-width="1.5"/>
+            <path d="M6.66667 10L8.88889 12.2222L13.3333 7.77778" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>@successMessage</span>
+    </div>
+}
+
+<!-- Error Message -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-banner">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8.33" stroke="#EF4444" stroke-width="1.5"/>
+            <path d="M10 6.66667V10" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="10" cy="13.3333" r="0.833" fill="#EF4444"/>
+        </svg>
+        <span>@errorMessage</span>
+    </div>
+}
+
+<style>
+    .my-listings-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        height: 400px;
+    }
+
+    .empty-icon {
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: #111827;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #6B7280;
+        margin: 0 0 24px 0;
+    }
+
+    .btn-primary {
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #2AA8E0;
+        transform: translateY(-1px);
+    }
+
+    .listings-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .listing-card {
+        display: flex;
+        flex-direction: column;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+
+    .listing-image {
+        height: 160px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .listing-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .listing-status {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .status-active {
+        background-color: #10B981;
+    }
+
+    .status-pending {
+        background-color: #F59E0B;
+    }
+
+    .status-sold {
+        background-color: #6B7280;
+    }
+
+    .listing-info {
+        padding: 12px 16px;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .listing-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: #111827;
+    }
+
+    .listing-price {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+        color: #3ABEF9;
+    }
+
+    .listing-date {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .listing-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 12px 16px;
+        gap: 16px;
+    }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .btn-icon:hover {
+        background-color: #F3F4F6;
+    }
+
+    .btn-icon.delete:hover {
+        background-color: #FEE2E2;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 320px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-icon {
+        margin-bottom: 16px;
+    }
+
+    .modal-content h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 8px 0;
+    }
+
+    .modal-content p {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0 0 20px 0;
+        line-height: 1.5;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-cancel, .btn-delete {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-cancel {
+        background: #F3F4F6;
+        color: #374151;
+    }
+
+    .btn-cancel:hover:not(:disabled) {
+        background: #E5E7EB;
+    }
+
+    .btn-delete {
+        background: #EF4444;
+        color: white;
+    }
+
+    .btn-delete:hover:not(:disabled) {
+        background: #DC2626;
+    }
+
+    .btn-delete:disabled, .btn-cancel:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    /* Success/Error Banners */
+    .success-banner, .error-banner {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1001;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideDown 0.3s ease;
+    }
+
+    .success-banner {
+        background: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #10B981;
+    }
+
+    .error-banner {
+        background: #FEE2E2;
+        color: #991B1B;
+        border: 1px solid #EF4444;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+</style>
+
+@code {
+    private List<Product> myListings = new List<Product>();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    
+    // Delete confirmation
+    private bool showDeleteConfirmation = false;
+    private string? listingToDeleteId;
+    private string? listingToDeleteName;
+    private bool isDeleting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMyListings();
+    }
+
+    private async Task LoadMyListings()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            // Fetch only products belonging to the current user
+            myListings = await ProductService.GetMyProductsAsync();
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load listings: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+
+    private void CreateNewListing()
+    {
+        TransitionService.RequestTransition("/what-are-you-selling", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void EditListing(string id)
+    {
+        // Navigate to edit page with the product ID
+        TransitionService.RequestTransition($"/edit-listing/{id}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void ShowDeleteConfirmation(string id, string name)
+    {
+        listingToDeleteId = id;
+        listingToDeleteName = name;
+        showDeleteConfirmation = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+        listingToDeleteId = null;
+        listingToDeleteName = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (string.IsNullOrEmpty(listingToDeleteId)) return;
+        
+        try
+        {
+            isDeleting = true;
+            errorMessage = null;
+            
+            var success = await ProductService.DeleteProductAsync(listingToDeleteId);
+            
+            if (success)
+            {
+                successMessage = "Listing deleted successfully!";
+                // Refresh the list after deletion
+                await LoadMyListings();
+            }
+            else
+            {
+                errorMessage = "Failed to delete listing. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting listing: {ex.Message}";
+        }
+        finally
+        {
+            isDeleting = false;
+            showDeleteConfirmation = false;
+            listingToDeleteId = null;
+            listingToDeleteName = null;
+            
+            // Clear success message after 3 seconds
+            if (!string.IsNullOrEmpty(successMessage))
+            {
+                _ = Task.Delay(3000).ContinueWith(_ =>
+                {
+                    successMessage = null;
+                    InvokeAsync(StateHasChanged);
+                });
+            }
+        }
+    }
+
+    private string GetStatusClass(bool isActive)
+    {
+        return isActive ? "status-active" : "status-sold";
+    }
+}

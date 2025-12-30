@@ -1,0 +1,507 @@
+@page "/what-are-you-selling"
+@inject NavigationManager Navigation
+@inject ICategoryService CategoryService
+@inject ProductCreationService ProductCreationService
+@inject GateSale.Services.PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Services
+@using GateSale.Models
+@using System.Collections.Generic
+
+<div class="mobile-container-base page-layout-centered page-container">
+    <div class="content-area">
+        <!-- Header with back button and title -->
+        <div class="header-section">
+            <button class="back-button" @onclick="@(string.IsNullOrEmpty(selectedCategory) ? GoBack : ClearSelection)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <h1 class="title-main">What are you selling?</h1>
+            <div class="header-spacer"></div>
+        </div>
+
+        @if (string.IsNullOrEmpty(selectedCategory))
+        {
+            <!-- Main Category Grid (shown when no category is selected) -->
+    <div class="category-grid">
+        @foreach (var category in sellingCategories)
+        {
+                    <div class="category-card @category.Name.ToLower()" @onclick="@(() => SelectCategory(category.Name))">
+                <div class="category-icon">
+                            @GetCategoryIcon(category.Name)
+                </div>
+                <span class="category-label">@category.DisplayName</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- Subcategory Selection (shown when a category is selected) -->
+            <div class="subcategory-container">
+                <div class="selected-category-indicator">
+                    @{
+                        var selectedCategoryObj = sellingCategories.FirstOrDefault(c => c.Name == selectedCategory);
+                        if (selectedCategoryObj != null)
+                        {
+                            <div class="category-pill @selectedCategory.ToLower()" @onclick="ClearSelection">
+                                <span class="category-icon small">@GetCategoryIcon(selectedCategory)</span>
+                                <span>@selectedCategoryObj.DisplayName</span>
+                                <span class="pill-close-icon">×</span>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="subcategory-list">
+                    @{
+                        var subCategories = sellingCategories
+                            .FirstOrDefault(c => c.Name == selectedCategory)?.SubCategories ?? new List<SubCategory>();
+                        
+                        foreach (var subCategory in subCategories)
+                        {
+                            <div class="subcategory-item @(selectedSubCategory == subCategory.Id ? "selected" : "")" 
+                                 @onclick="@(() => SelectSubCategory(subCategory.Id))">
+                                <div class="radio-button @(selectedSubCategory == subCategory.Id ? "selected" : "")">
+                                    @if (selectedSubCategory == subCategory.Id)
+                                    {
+                                        <div class="radio-dot"></div>
+                                    }
+                                </div>
+                                <span class="subcategory-label">@subCategory.DisplayName</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Next Button - only shown when a category is selected -->
+    @if (!string.IsNullOrEmpty(selectedCategory))
+    {
+        <div class="bottom-button-container">
+            <button class="btn-base btn-primary btn-next"
+                    @onclick="GoNext"
+                    disabled="@(!IsNextButtonEnabled)">
+                Next
+            </button>
+        </div>
+    }
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .content-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bottom-button-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.06);
+        z-index: 10;
+    }
+
+    .btn-next {
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 50px;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 10px;
+        background-color: #3ABEF9;
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .btn-next:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(58, 190, 249, 0.3);
+    }
+    
+    .btn-next:disabled {
+        opacity: 0.7;
+        background-color: #D1D5DB;
+    }
+
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 24px;
+        padding: 8px 0;
+        border-bottom: 1px solid #F3F4F6;
+    }
+    
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 38px;
+    }
+    
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+    
+    .header-spacer {
+        width: 40px;
+    }
+
+    .title-main {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        text-align: center;
+        flex: 1;
+    }
+
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 40px;
+    }
+
+    .category-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        min-height: 120px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+        position: relative;
+        border: 2px solid transparent;
+        overflow: hidden;
+    }
+
+        .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .category-card:active {
+            transform: translateY(0);
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Category background colors */
+    .category-card.academic, .category-pill.academic {
+        background-color: #3B82F6;
+    }
+
+    .category-card.uniform, .category-pill.uniform {
+        background-color: #F59E0B;
+    }
+
+    .category-card.tech, .category-pill.tech {
+        background-color: #10B981;
+    }
+
+    .category-card.toys, .category-pill.toys {
+        background-color: #8B5CF6;
+    }
+
+    .category-card.sports, .category-pill.sports {
+        background-color: #EF4444;
+    }
+
+    .category-card.arts, .category-pill.arts {
+        background-color: #EC4899;
+    }
+
+    .category-card.miscellaneous, .category-pill.miscellaneous {
+        background-color: #6B7280;
+    }
+
+    .category-icon {
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        width: 40px;
+    }
+
+    .category-icon.small {
+        margin-bottom: 0;
+        margin-right: 8px;
+        height: 24px;
+        width: 24px;
+    }
+    
+    .category-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .category-icon.small svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .category-label {
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.3;
+        letter-spacing: 0.01em;
+    }
+
+    /* Subcategory styles */
+    .subcategory-container {
+        width: 100%;
+        max-width: 320px;
+        margin-bottom: 40px;
+    }
+
+    .selected-category-indicator {
+        margin-bottom: 20px;
+    }
+
+    .category-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 18px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 600;
+        font-size: 15px;
+        box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .category-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+    }
+    
+    .pill-close-icon {
+        margin-left: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        opacity: 0.8;
+    }
+
+    .subcategory-list {
+        background-color: white;
+        border-radius: 16px;
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #F3F4F6;
+    }
+
+    .subcategory-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        cursor: pointer;
+        border-bottom: 1px solid #F3F4F6;
+        transition: all 0.2s ease;
+    }
+
+    .subcategory-item:last-child {
+        border-bottom: none;
+    }
+
+    .subcategory-item:hover {
+        background-color: #F9FAFB;
+    }
+
+    .subcategory-item.selected {
+        background-color: #F0F9FF;
+        border-left: 3px solid #3ABEF9;
+    }
+
+    .radio-button {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid #D1D5DB;
+        margin-right: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .radio-button.selected {
+        border-color: #3ABEF9;
+        box-shadow: 0 0 0 2px rgba(58, 190, 249, 0.2);
+    }
+
+    .radio-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #3ABEF9;
+    }
+
+    .subcategory-label {
+        font-size: 16px;
+        color: #1F2937;
+        font-weight: 500;
+    }
+</style>
+
+@code {
+    private string? selectedCategory = null;
+    private string? selectedSubCategory = null;
+    private List<SellingCategory> sellingCategories = new();
+
+    private bool IsNextButtonEnabled => !string.IsNullOrEmpty(selectedCategory) && !string.IsNullOrEmpty(selectedSubCategory);
+    
+    private RenderFragment GetCategoryIcon(string categoryName)
+    {
+        return categoryName switch
+        {
+            "Academic" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M26.6667 10.6667L16 5.33334L5.33334 10.6667L16 16L26.6667 10.6667Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M26.6667 16V21.3333" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9.33334 12.6667V20C9.33334 20 12 22.6667 16 22.6667C20 22.6667 22.6667 20 22.6667 20V12.6667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>,
+                          
+            "Uniform" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M20 4H12L8 12H12L10 24H22L20 12H24L20 4Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                         </svg>,
+                         
+            "Tech" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M26.6667 5.33334H5.33334C4.59696 5.33334 4 5.9303 4 6.66668V21.3333C4 22.0697 4.59696 22.6667 5.33334 22.6667H26.6667C27.4031 22.6667 28 22.0697 28 21.3333V6.66668C28 5.9303 27.4031 5.33334 26.6667 5.33334Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 26.6667H20" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 22.6667V26.6667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>,
+                      
+            "Toys" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 12H12V16H8V12Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M20 12H24V16H20V12Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 20H18V24H14V20Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 4L28 16L16 28L4 16L16 4Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>,
+                      
+            "Sports" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="16" cy="16" r="12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M16 4C18.3734 6.69961 19.7046 10.2261 19.7046 13.8824C19.7046 17.5386 18.3734 21.0651 16 23.7647" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M16 4C13.6266 6.69961 12.2954 10.2261 12.2954 13.8824C12.2954 17.5386 13.6266 21.0651 16 23.7647" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M5.17651 10.8235H26.8235" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M5.17651 21.1765H26.8235" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>,
+                        
+            "Arts" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 4C22.6274 4 28 9.37258 28 16C28 22.6274 22.6274 28 16 28C9.37258 28 4 22.6274 4 16C4 9.37258 9.37258 4 16 4Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 20C18.2091 20 20 18.2091 20 16C20 13.7909 18.2091 12 16 12C13.7909 12 12 13.7909 12 16C12 18.2091 13.7909 20 16 20Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7.51471 7.51471L12.3432 12.3432" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M19.6569 19.6569L24.4853 24.4853" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7.51471 24.4853L12.3432 19.6569" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M19.6569 12.3432L24.4853 7.51471" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>,
+                      
+            "Miscellaneous" => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                 <path d="M16 5.33334V8.00001" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M16 24V26.6667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M8.46666 8.46667L10.4 10.4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M21.6 21.6L23.5333 23.5333" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M5.33334 16H8.00001" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M24 16H26.6667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M8.46666 23.5333L10.4 21.6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M21.6 10.4L23.5333 8.46667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                 <path d="M16 20C18.2091 20 20 18.2091 20 16C20 13.7909 18.2091 12 16 12C13.7909 12 12 13.7909 12 16C12 18.2091 13.7909 20 16 20Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                               </svg>,
+                               
+            _ => @<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                   <path d="M16 28C22.6274 28 28 22.6274 28 16C28 9.37258 22.6274 4 16 4C9.37258 4 4 9.37258 4 16C4 22.6274 9.37258 28 16 28Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   <path d="M16 10.6667V16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   <path d="M16 21.3333H16.0133" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                 </svg>
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load selling categories from service
+        sellingCategories = await CategoryService.GetSellingCategoriesAsync();
+    }
+
+    private void SelectCategory(string category)
+    {
+        selectedCategory = category;
+        selectedSubCategory = null; // Reset subcategory selection
+        StateHasChanged();
+    }
+
+    private void SelectSubCategory(string subCategory)
+    {
+        // Toggle selection: if already selected, unselect it
+        if (selectedSubCategory == subCategory)
+        {
+            selectedSubCategory = null;
+        }
+        else
+        {
+            selectedSubCategory = subCategory;
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSelection()
+    {
+        selectedCategory = null;
+        selectedSubCategory = null;
+        StateHasChanged();
+    }
+
+    private void GoNext()
+    {
+        if (IsNextButtonEnabled && !string.IsNullOrEmpty(selectedCategory) && !string.IsNullOrEmpty(selectedSubCategory))
+        {
+            // Save category and subcategory to ProductCreationService
+            ProductCreationService.SetCategories(new List<string> { selectedCategory });
+            ProductCreationService.SetSubCategory(selectedSubCategory);
+            TransitionService.RequestTransition("/add-photos-videos", GateSale.Services.TransitionType.SlideLeft);
+        }
+    }
+    
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/home2", GateSale.Services.TransitionType.SlideRight);
+    }
+}

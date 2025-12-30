@@ -1,0 +1,1108 @@
+@page "/order-details/{OrderId}"
+@inject NavigationManager Navigation
+@inject IOrderService OrderService
+@inject IUserService UserService
+@inject IPaymentService PaymentService
+@inject IOrderTrackingService OrderTrackingService
+@inject IPudoSimulationService PudoSimulationService
+@inject PageTransitionService TransitionService
+@using GateSale.Services.Interfaces
+@using GateSale.Models
+@using System.Collections.Generic
+@using System.Linq
+
+<div class="order-details-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">Order Details</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading order details...</p>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="error-state">
+                <p>@errorMessage</p>
+                <button class="btn-primary" @onclick="LoadOrderDetails">Retry</button>
+            </div>
+        }
+        else if (order != null)
+        {
+            <!-- Order Status Banner -->
+            <div class="status-banner @GetStatusClass(order.Status)">
+                <div class="status-icon">
+                    @GetStatusIcon(order.Status)
+                </div>
+                <div class="status-info">
+                    <h2 class="status-title">@order.StatusLabel</h2>
+                    <p class="status-description">@GetStatusDescription(order.Status)</p>
+                </div>
+            </div>
+
+            <!-- Product Card -->
+            <div class="section-card">
+                <h3 class="section-title">Product</h3>
+                <div class="product-info">
+                    <div class="product-image">
+                        <img src="@order.ProductImageUrl" alt="@order.ProductTitle" />
+                    </div>
+                    <div class="product-details">
+                        <h4 class="product-name">@order.ProductTitle</h4>
+                        <p class="product-category">@order.Category @(string.IsNullOrEmpty(order.SubCategory) ? "" : $") > {order.SubCategory}")</p>
+                        <div class="product-price">R @order.ItemSubtotal.ToString("F2")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="section-card">
+                <h3 class="section-title">Shipping Information</h3>
+                <div class="shipping-info">
+                    <div class="info-row">
+                        <span class="info-label">Order Number:</span>
+                        <span class="info-value">#@order.OrderNumber</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Order Date:</span>
+                        <span class="info-value">@order.OrderDate.ToString("MMM dd, yyyy HH:mm")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(order.PudoTrackingNumber))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Tracking Number:</span>
+                            <span class="info-value highlight">@order.PudoTrackingNumber</span>
+                        </div>
+                    }
+                    
+                    <div class="locker-details mt-12">
+                        <div class="locker-box">
+                            <div class="locker-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 8V21H3V8" />
+                                    <path d="M1 3H23V8H1V3Z" />
+                                    <path d="M10 12H14" />
+                                </svg>
+                            </div>
+                            <div class="locker-info">
+                                <span class="locker-label">Drop-off Locker (Seller)</span>
+                                <span class="locker-name">@order.SellerLocker?.Location</span>
+                                <span class="locker-code">Code: @order.SellerLocker?.LockerCode</span>
+                            </div>
+                        </div>
+                        <div class="locker-connector"></div>
+                        <div class="locker-box">
+                            <div class="locker-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 8V21H3V8" />
+                                    <path d="M1 3H23V8H1V3Z" />
+                                    <path d="M10 12H14" />
+                                </svg>
+                            </div>
+                            <div class="locker-info">
+                                <span class="locker-label">Collection Locker (Buyer)</span>
+                                <span class="locker-name">@order.BuyerLocker?.Location</span>
+                                <span class="locker-code">Code: @order.BuyerLocker?.LockerCode</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tracking Timeline -->
+            <div class="section-card">
+                <h3 class="section-title">Order Tracking</h3>
+                @if (trackingInfo != null && trackingInfo.Events.Any())
+                {
+                    <div class="tracking-timeline">
+                        @foreach (var evt in trackingInfo.Events)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="event-header">
+                                        <span class="event-type">@evt.EventType</span>
+                                        <span class="event-time">@evt.Timestamp.ToString("MMM dd, HH:mm")</span>
+                                    </div>
+                                    <p class="event-description">@evt.Description</p>
+                                    @if (!string.IsNullOrEmpty(evt.Location))
+                                    {
+                                        <div class="event-location">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                                <circle cx="12" cy="10" r="3" />
+                                            </svg>
+                                            <span>@evt.Location</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="no-events">No tracking events yet.</p>
+                }
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="section-card">
+                <h3 class="section-title">Payment Summary</h3>
+                <div class="payment-summary">
+                    <div class="summary-row">
+                        <span>Item Price</span>
+                        <span>R @order.ItemSubtotal.ToString("F2")</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping Fee</span>
+                        <span>R @order.ShippingCost.ToString("F2")</span>
+                    </div>
+                    @if (isSeller)
+                    {
+                        <div class="summary-row fee">
+                            <span>Admin Fee (10%)</span>
+                            <span>- R @order.AdminFeeAmount.ToString("F2")</span>
+                        </div>
+                        <div class="summary-row total payout">
+                            <span>Your Payout</span>
+                            <span>R @order.SellerPayoutAmount.ToString("F2")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="summary-row total">
+                            <span>Total Amount</span>
+                            <span>R @order.TotalAmount.ToString("F2")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-container">
+                @if (isSeller)
+                {
+                    @if (order.Status == OrderStatus.PaidAwaitingShipment)
+                    {
+                        <button class="btn-primary full-width" @onclick="ShowShipmentDialog">Mark as Shipped</button>
+                        <button class="btn-outline full-width mt-12" @onclick="CancelOrder">Cancel Order</button>
+                    }
+                }
+                else
+                {
+                    @if (order.Status == OrderStatus.AwaitingPayment)
+                    {
+                        <button class="btn-primary full-width" @onclick="PayNow">Pay Now</button>
+                        <button class="btn-outline-danger full-width mt-12" @onclick="CancelOrder">Cancel Order</button>
+                    }
+                    else if (order.Status == OrderStatus.Delivered || order.Status == OrderStatus.Collected)
+                    {
+                        <button class="btn-primary full-width" @onclick="ApproveOrder">Approve & Release Payment</button>
+                        <button class="btn-outline-danger full-width mt-12" @onclick="InitiateDispute">Dispute Order</button>
+                    }
+                    else if (order.Status == OrderStatus.PaidAwaitingShipment)
+                    {
+                        <button class="btn-outline-danger full-width" @onclick="CancelOrder">Cancel Order</button>
+                    }
+                }
+
+                <!-- Test Buttons (Visible for both for testing) -->
+                <div class="test-actions mt-24">
+                    <p class="test-label">Developer Test Actions:</p>
+                    <div class="test-grid">
+                        <button class="btn-test" @onclick="() => TestUpdateStatus(OrderStatus.Delivered)">Set Delivered</button>
+                        <button class="btn-test" @onclick="() => TestUpdateStatus(OrderStatus.Collected)">Set Collected</button>
+                    </div>
+                </div>
+
+                <!-- Simulation Actions (Testing Only) -->
+                <div class="section-card simulation-section mt-24">
+                    <h3 class="section-title">Pudo Simulation (Testing)</h3>
+                    <div class="simulation-actions">
+                        <button class="btn-outline full-width" @onclick="SimulatePudoDrop" disabled="@isProcessing">
+                            @if (isProcessing) { <span class="spinner-small"></span> }
+                            Simulate Pudo Drop (Delivered)
+                        </button>
+                        <button class="btn-outline full-width mt-12" @onclick="SimulatePudoPickup" disabled="@isProcessing">
+                            @if (isProcessing) { <span class="spinner-small"></span> }
+                            Simulate Pudo Pickup (Collected)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Shipment Dialog -->
+    @if (showShipmentDialog)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <h3 class="modal-title">Shipment Details</h3>
+                <p class="modal-subtitle">Please enter the Pudo tracking information after dropping off the item.</p>
+                
+                <div class="form-group">
+                    <label>Pudo Tracking Number</label>
+                    <input type="text" @bind="trackingNumber" placeholder="e.g. PUDO12345678" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Shipment Reference (Optional)</label>
+                    <input type="text" @bind="shipmentReference" placeholder="e.g. GS-REF-001" />
+                </div>
+
+                @if (dialogError != null)
+                {
+                    <p class="dialog-error">@dialogError</p>
+                }
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" @onclick="HideShipmentDialog" disabled="@isProcessing">Cancel</button>
+                    <button class="btn-primary" @onclick="ProcessShipment" disabled="@(string.IsNullOrEmpty(trackingNumber) || isProcessing)">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-small"></span>
+                        }
+                        else
+                        {
+                            <span>Confirm Shipment</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .order-details-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        max-width: 375px;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #F9FAFB;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #F3F4F6;
+        background-color: white;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+    }
+
+    .back-button:hover {
+        background-color: #F3F4F6;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .status-banner {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    .status-banner.pending { background-color: #FEF3C7; color: #92400E; }
+    .status-banner.transit { background-color: #DBEAFE; color: #1E40AF; }
+    .status-banner.delivered { background-color: #D1FAE5; color: #065F46; }
+    .status-banner.cancelled { background-color: #FEE2E2; color: #991B1B; }
+    .status-banner.dispute { background-color: #FEE2E2; color: #991B1B; }
+
+    .status-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .status-description {
+        font-size: 12px;
+        margin: 4px 0 0 0;
+        opacity: 0.8;
+    }
+
+    .section-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #374151;
+        margin: 0 0 12px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .product-info {
+        display: flex;
+        gap: 12px;
+    }
+
+    .product-image {
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #F3F4F6;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-details {
+        flex: 1;
+    }
+
+    .product-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+        color: #111827;
+    }
+
+    .product-category {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 2px 0;
+    }
+
+    .product-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: #3ABEF9;
+        margin-top: 4px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+
+    .info-label {
+        color: #6B7280;
+    }
+
+    .info-value {
+        color: #111827;
+        font-weight: 500;
+    }
+
+    .info-value.highlight {
+        color: #3ABEF9;
+        font-weight: 700;
+    }
+
+    .locker-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .locker-box {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 8px 0;
+    }
+
+    .locker-icon {
+        color: #3ABEF9;
+        margin-top: 2px;
+    }
+
+    .locker-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .locker-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #9CA3AF;
+        font-weight: 700;
+    }
+
+    .locker-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .locker-code {
+        font-size: 11px;
+        color: #6B7280;
+    }
+
+    .locker-connector {
+        width: 2px;
+        height: 20px;
+        background-color: #E5E7EB;
+        margin-left: 9px;
+    }
+
+    .payment-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        color: #4B5563;
+    }
+
+    .summary-row.fee {
+        color: #DC2626;
+    }
+
+    .summary-row.total {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #F3F4F6;
+        font-weight: 700;
+        font-size: 16px;
+        color: #111827;
+    }
+
+    .summary-row.payout {
+        color: #059669;
+    }
+
+    .actions-container {
+        margin-top: 8px;
+        margin-bottom: 40px;
+    }
+
+    .btn-primary {
+        background-color: #3ABEF9;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background-color: #F3F4F6;
+        color: #4B5563;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .btn-outline {
+        background: none;
+        border: 2px solid #E5E7EB;
+        color: #4B5563;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .btn-outline-danger {
+        background: none;
+        border: 2px solid #FEE2E2;
+        color: #DC2626;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .full-width { width: 100%; }
+    .mt-12 { margin-top: 12px; }
+    .mt-24 { margin-top: 24px; }
+
+    /* Test Styles */
+    .test-actions {
+        padding: 12px;
+        background-color: #F3F4F6;
+        border: 1px dashed #D1D5DB;
+        border-radius: 12px;
+    }
+    .test-label { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 8px; }
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-test { background-color: #4B5563; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-test:hover { background-color: #374151; }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 20px;
+        padding: 24px;
+        width: 100%;
+        max-width: 335px;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+    }
+
+    .modal-subtitle {
+        font-size: 13px;
+        color: #6B7280;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .dialog-error {
+        color: #DC2626;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #F3F4F6;
+        border-top: 3px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+    /* Tracking Timeline Styles */
+    .tracking-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: relative;
+        padding-left: 10px;
+        margin-top: 10px;
+    }
+
+    .tracking-timeline::before {
+        content: '';
+        position: absolute;
+        left: 14px;
+        top: 5px;
+        bottom: 5px;
+        width: 2px;
+        background-color: #E5E7EB;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        position: relative;
+    }
+
+    .timeline-marker {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #3ABEF9;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #3ABEF9;
+        z-index: 1;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .event-type {
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .event-time {
+        font-size: 11px;
+        color: #6B7280;
+    }
+
+    .event-description {
+        font-size: 13px;
+        color: #4B5563;
+        margin: 0 0 4px 0;
+        line-height: 1.4;
+    }
+
+    .event-location {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #6B7280;
+    }
+
+    .no-events {
+        font-size: 13px;
+        color: #6B7280;
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .simulation-section {
+        border: 1px dashed #3ABEF9;
+        background-color: #F0F9FF;
+    }
+
+    .simulation-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+</style>
+
+@code {
+    [Parameter] public string OrderId { get; set; } = string.Empty;
+
+    private OrderDetailDto? order;
+    private OrderTrackingInfo? trackingInfo;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private bool isSeller = false;
+    private bool isProcessing = false;
+
+    // Shipment Dialog
+    private bool showShipmentDialog = false;
+    private string trackingNumber = string.Empty;
+    private string shipmentReference = string.Empty;
+    private string? dialogError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrderDetails();
+    }
+
+    private async Task LoadOrderDetails()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            if (Guid.TryParse(OrderId, out var orderGuid))
+            {
+                order = await OrderService.GetOrderByIdAsync(orderGuid);
+                
+                if (order != null)
+                {
+                    var currentUser = await UserService.GetCurrentUserAsync();
+                    if (currentUser != null)
+                    {
+                        var sellerOrders = await OrderService.GetSellerOrdersAsync();
+                        isSeller = sellerOrders.Any(o => o.Id == orderGuid);
+                    }
+
+                    // Load tracking info
+                    trackingInfo = await OrderTrackingService.GetOrderTrackingAsync(orderGuid);
+                }
+                else
+                {
+                    errorMessage = "Order not found.";
+                }
+            }
+            else
+            {
+                errorMessage = "Invalid Order ID.";
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load order details.";
+            Console.WriteLine($"Error: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private string GetStatusClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.AwaitingPayment => "pending",
+            OrderStatus.PaidAwaitingShipment => "pending",
+            OrderStatus.InTransit => "transit",
+            OrderStatus.Delivered => "delivered",
+            OrderStatus.Collected => "delivered",
+            OrderStatus.BuyerApproved => "delivered",
+            OrderStatus.Completed => "delivered",
+            OrderStatus.CancelledBySeller => "cancelled",
+            OrderStatus.DisputeInProgress => "dispute",
+            _ => "pending"
+        };
+    }
+
+    private RenderFragment GetStatusIcon(OrderStatus status) => builder =>
+    {
+        builder.OpenElement(0, "svg");
+        builder.AddAttribute(1, "width", "24");
+        builder.AddAttribute(2, "height", "24");
+        builder.AddAttribute(3, "viewBox", "0 0 24 24");
+        builder.AddAttribute(4, "fill", "none");
+        builder.AddAttribute(5, "stroke", "currentColor");
+        builder.AddAttribute(6, "stroke-width", "2");
+
+        switch (status)
+        {
+            case OrderStatus.AwaitingPayment:
+                builder.AddContent(7, (MarkupString)"<circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/>");
+                break;
+            case OrderStatus.PaidAwaitingShipment:
+                builder.AddContent(7, (MarkupString)"<circle cx='12' cy='12' r='10'/><polyline points='12 6 12 12 16 14'/>");
+                break;
+            case OrderStatus.InTransit:
+                builder.AddContent(7, (MarkupString)"<rect x='1' y='3' width='15' height='13'/><polygon points='16 8 20 8 23 11 23 16 16 16 16 8'/><circle cx='5.5' cy='18.5' r='2.5'/><circle cx='18.5' cy='18.5' r='2.5'/>");
+                break;
+            case OrderStatus.Delivered:
+            case OrderStatus.Collected:
+            case OrderStatus.BuyerApproved:
+            case OrderStatus.Completed:
+                builder.AddContent(7, (MarkupString)"<polyline points='20 6 9 17 4 12'/>");
+                break;
+            default:
+                builder.AddContent(7, (MarkupString)"<circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/>");
+                break;
+        }
+        builder.CloseElement();
+    };
+
+    private string GetStatusDescription(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.AwaitingPayment => "Order created. Please complete the payment to proceed.",
+            OrderStatus.PaidAwaitingShipment => "Payment received. Seller needs to drop off the item at the Pudo locker.",
+            OrderStatus.InTransit => "Item is on its way to the destination locker.",
+            OrderStatus.Delivered => "Item has arrived at the destination locker and is ready for collection.",
+            OrderStatus.Collected => "Buyer has collected the item from the locker.",
+            OrderStatus.BuyerApproved => "Buyer has approved the item. Payout is being processed.",
+            OrderStatus.Completed => "Order completed successfully.",
+            OrderStatus.CancelledBySeller => "This order was cancelled by the seller.",
+            OrderStatus.DisputeInProgress => "A dispute has been opened for this order.",
+            _ => "Order is being processed."
+        };
+    }
+
+    private void ShowShipmentDialog()
+    {
+        trackingNumber = string.Empty;
+        shipmentReference = string.Empty;
+        dialogError = null;
+        showShipmentDialog = true;
+    }
+
+    private void HideShipmentDialog()
+    {
+        showShipmentDialog = false;
+    }
+
+    private async Task PayNow()
+    {
+        if (order == null || isProcessing) return;
+
+        try
+        {
+            isProcessing = true;
+            errorMessage = null;
+            
+            var paymentResult = await PaymentService.InitiatePaymentAsync(new InitiatePaymentRequest
+            {
+                OrderId = order.Id,
+                ReturnUrl = $"{MauiProgram.ApiBaseUrl}payment-success",
+                CancelUrl = $"{MauiProgram.ApiBaseUrl}payment-cancel"
+            });
+
+            if (paymentResult != null && paymentResult.Success && !string.IsNullOrEmpty(paymentResult.PaymentUrl))
+            {
+                await Launcher.Default.OpenAsync(paymentResult.PaymentUrl);
+            }
+            else
+            {
+                errorMessage = paymentResult?.Message ?? "Failed to initiate payment.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred while initiating payment.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ProcessShipment()
+    {
+        if (string.IsNullOrWhiteSpace(trackingNumber)) return;
+
+        try
+        {
+            isProcessing = true;
+            dialogError = null;
+
+            var success = await OrderService.ProcessShipmentAsync(order!.Id, trackingNumber, shipmentReference);
+            
+            if (success)
+            {
+                showShipmentDialog = false;
+                await LoadOrderDetails();
+            }
+            else
+            {
+                dialogError = "Failed to update shipment. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            dialogError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ApproveOrder()
+    {
+        try
+        {
+            isProcessing = true;
+            var success = await OrderService.ApproveOrderAsync(order!.Id);
+            if (success)
+            {
+                await LoadOrderDetails();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task CancelOrder()
+    {
+        try
+        {
+            isProcessing = true;
+            var success = await OrderService.CancelOrderAsync(order!.Id, "Cancelled by user", "User requested cancellation via app.");
+            if (success)
+            {
+                await LoadOrderDetails();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void InitiateDispute()
+    {
+        TransitionService.RequestTransition($"/dispute/{OrderId}", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private async Task TestUpdateStatus(OrderStatus status)
+    {
+        try
+        {
+            isProcessing = true;
+            if (Guid.TryParse(OrderId, out var guid))
+            {
+                var success = await OrderService.UpdateOrderStatusAsync(guid, status, "Test manual status update");
+                if (success) await LoadOrderDetails();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task SimulatePudoDrop()
+    {
+        if (order == null) return;
+        try
+        {
+            isProcessing = true;
+            var success = await PudoSimulationService.SimulatePackageDroppedAsync(order.Id, order.BuyerLocker?.LockerCode ?? "MOCK001");
+            if (success)
+            {
+                await LoadOrderDetails();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task SimulatePudoPickup()
+    {
+        if (order == null) return;
+        try
+        {
+            isProcessing = true;
+            var success = await PudoSimulationService.SimulatePackagePickedUpAsync(order.Id, order.BuyerLocker?.LockerCode ?? "MOCK001");
+            if (success)
+            {
+                await LoadOrderDetails();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        if (isSeller)
+            TransitionService.RequestTransition("/my-orders", GateSale.Services.TransitionType.SlideRight);
+        else
+            TransitionService.RequestTransition("/my-purchases", GateSale.Services.TransitionType.SlideRight);
+    }
+}

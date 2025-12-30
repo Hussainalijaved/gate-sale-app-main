@@ -1,0 +1,13 @@
+# Build output
+bin/
+obj/
+.vs/
+
+# Node modules
+node_modules/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
