@@ -31,20 +31,36 @@ namespace GateSale.API.Controllers
         private async Task<Guid> GetCurrentUserId()
         {
             // Get Cognito user ID from token
-            var cognitoUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(cognitoUserIdClaim))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
             {
                 throw new UnauthorizedAccessException("User ID not found in token");
             }
             
-            _logger.LogInformation("Found Cognito User ID in token: {CognitoUserId}", cognitoUserIdClaim);
+            _logger.LogInformation("Found User ID claim in token: {UserIdClaim}", userIdClaim);
             
-            // Look up user by Cognito ID
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.CognitoUserId == cognitoUserIdClaim);
+            // 1. Try to look up by CognitoUserId (most reliable for Cognito tokens)
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.CognitoUserId == userIdClaim);
+            
+            // 2. If not found, try to parse as Guid and look up by Id
+            if (user == null && Guid.TryParse(userIdClaim, out var guidId))
+            {
+                user = await _dbContext.Users.FindAsync(guidId);
+            }
+
+            // 3. If still not found, try to look up by Email
+            if (user == null)
+            {
+                var email = User.FindFirstValue(ClaimTypes.Email);
+                if (!string.IsNullOrEmpty(email))
+                {
+                    user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+                }
+            }
             
             if (user == null)
             {
-                _logger.LogWarning("No user found with Cognito ID: {CognitoUserId}", cognitoUserIdClaim);
+                _logger.LogWarning("No user found in database for claim: {UserIdClaim}", userIdClaim);
                 throw new UnauthorizedAccessException("User not found in database");
             }
             

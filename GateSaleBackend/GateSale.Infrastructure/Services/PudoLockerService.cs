@@ -92,33 +92,38 @@ namespace GateSale.Infrastructure.Services
                         var errorContent = await response.Content.ReadAsStringAsync();
                         _logger.LogError("Pudo API error response: {ErrorContent}", errorContent);
                         
-                        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                        {
-                            _logger.LogWarning("Authentication failed. Returning mock data for development purposes.");
-                            lockers = GetMockLockers(latitude, longitude);
-                        }
-                        else
-                        {
-                            response.EnsureSuccessStatusCode();
-                            return Enumerable.Empty<Locker>(); // Should not reach here
-                        }
+                        _logger.LogWarning("Pudo API request failed with status {StatusCode}. Returning mock data as fallback.", response.StatusCode);
+                        lockers = GetMockLockers(latitude, longitude);
                     }
                     else
                     {
                         var pudoLockers = await response.Content.ReadFromJsonAsync<List<PudoLockerDto>>();
-                        if (pudoLockers == null) return Enumerable.Empty<Locker>();
-                        
-                        // Convert Pudo DTOs to our Locker entities
-                        lockers = pudoLockers.Select(pl => new Locker
+                        if (pudoLockers == null || !pudoLockers.Any()) 
                         {
-                            LockerCode = pl.LockerCode,
-                            Location = pl.Address,
-                            Description = pl.Description,
-                            Status = MapPudoStatusToLockerStatus(pl.Status),
-                            Latitude = pl.Latitude,
-                            Longitude = pl.Longitude
-                        }).ToList();
+                            _logger.LogWarning("Pudo API returned no lockers. Returning mock data as fallback.");
+                            lockers = GetMockLockers(latitude, longitude);
+                        }
+                        else
+                        {
+                            // Convert Pudo DTOs to our Locker entities
+                            lockers = pudoLockers.Select(pl => new Locker
+                            {
+                                LockerCode = pl.LockerCode,
+                                Location = pl.Address,
+                                Description = pl.Description,
+                                Status = MapPudoStatusToLockerStatus(pl.Status),
+                                Latitude = pl.Latitude,
+                                Longitude = pl.Longitude
+                            }).ToList();
+                        }
                     }
+                }
+
+                // If for some reason we still have no lockers, use mock data as a last resort
+                if (lockers == null || !lockers.Any())
+                {
+                    _logger.LogWarning("No lockers found from any source. Using mock data as last resort.");
+                    lockers = GetMockLockers(latitude, longitude);
                 }
 
                 // Ensure lockers are in the database

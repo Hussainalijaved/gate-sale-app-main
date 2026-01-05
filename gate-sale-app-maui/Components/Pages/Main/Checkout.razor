@@ -3,11 +3,13 @@
 @inject ILockerService LockerService
 @inject IProductService ProductService
 @inject IPaymentService PaymentService
+@inject IUserLockerService UserLockerService
 @inject GateSale.Services.PageTransitionService TransitionService
 @inject NavigationManager Navigation
 @using GateSale.Models
 @using GateSale.Services.Interfaces
 @using System.Collections.Generic
+@using System.Linq
 
 <div class="checkout-container">
     <!-- Header -->
@@ -74,9 +76,17 @@
                     <div class="lockers-list">
                         @foreach (var locker in lockers)
                         {
+                            var isFavorite = favoriteLockerCodes.Contains(locker.LockerCode);
                             <div class="locker-item @(selectedLocker?.Id == locker.Id ? "selected" : "")" @onclick="() => SelectLocker(locker)">
                                 <div class="locker-info">
-                                    <span class="locker-name">@locker.Location</span>
+                                    <div class="locker-header-row">
+                                        <span class="locker-name">@locker.Location</span>
+                                        <button class="favorite-btn @(isFavorite ? "active" : "")" @onclick:stopPropagation="true" @onclick="() => ToggleFavorite(locker)">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="@(isFavorite ? "#FFD700" : "none")" stroke="@(isFavorite ? "#FFD700" : "#9CA3AF")" stroke-width="2">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <span class="locker-code">Code: @locker.LockerCode</span>
                                     @if (!string.IsNullOrEmpty(locker.Description))
                                     {
@@ -267,6 +277,33 @@
         color: #9CA3AF;
     }
 
+    .locker-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .favorite-btn {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .favorite-btn:hover {
+        background-color: #F3F4F6;
+    }
+
+    .favorite-btn.active svg {
+        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
+    }
+
     .radio-circle {
         width: 20px;
         height: 20px;
@@ -402,6 +439,7 @@
     private ProductDetail? product;
     private List<LockerDto> lockers = new List<LockerDto>();
     private LockerDto? selectedLocker;
+    private HashSet<string> favoriteLockerCodes = new HashSet<string>();
     private bool isLoading = true;
     private bool isFetchingLockers = false;
     private bool isPlacingOrder = false;
@@ -413,6 +451,17 @@
         {
             isLoading = true;
             product = await ProductService.GetProductDetailByIdAsync(ProductId);
+            
+            // Load favorites and default
+            var favorites = await UserLockerService.GetFavoriteLockersAsync();
+            favoriteLockerCodes = new HashSet<string>(favorites.Select(f => f.Locker.LockerCode));
+            
+            var defaultLocker = await UserLockerService.GetDefaultLockerAsync();
+            if (defaultLocker != null)
+            {
+                selectedLocker = defaultLocker.Locker;
+            }
+
             await FetchLockers();
             isLoading = false;
         }
@@ -428,12 +477,54 @@
         try
         {
             isFetchingLockers = true;
-            // Using dummy coordinates for Cape Town as a default
-            lockers = await LockerService.GetNearbyLockersAsync(-33.9249, 18.4241, 50);
-            if (lockers.Count > 0)
+            
+            double latitude = -33.9249; // Default Cape Town
+            double longitude = 18.4241;
+
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                var location = await Geolocation.Default.GetLocationAsync(request);
+
+                if (location != null)
+                {
+                    latitude = location.Latitude;
+                    longitude = location.Longitude;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting GPS location: {ex.Message}. Using default coordinates.");
+            }
+
+            var nearbyLockers = await LockerService.GetNearbyLockersAsync(latitude, longitude, 50);
+            
+            // Merge with favorites if not in nearby
+            var favorites = await UserLockerService.GetFavoriteLockersAsync();
+            var favoriteLockers = favorites.Select(f => f.Locker).ToList();
+            
+            lockers = nearbyLockers.ToList();
+            foreach (var fav in favoriteLockers)
+            {
+                if (!lockers.Any(l => l.LockerCode == fav.LockerCode))
+                {
+                    lockers.Insert(0, fav);
+                }
+            }
+
+            if (selectedLocker == null && lockers.Count > 0)
             {
                 selectedLocker = lockers[0];
             }
+            else if (selectedLocker != null)
+            {
+                // Ensure selected locker is in the list
+                if (!lockers.Any(l => l.LockerCode == selectedLocker.LockerCode))
+                {
+                    lockers.Insert(0, selectedLocker);
+                }
+            }
+
             isFetchingLockers = false;
         }
         catch (Exception ex)
@@ -441,6 +532,27 @@
             Console.WriteLine($"Error fetching lockers: {ex.Message}");
             isFetchingLockers = false;
         }
+    }
+
+    private async Task ToggleFavorite(LockerDto locker)
+    {
+        if (favoriteLockerCodes.Contains(locker.LockerCode))
+        {
+            var success = await UserLockerService.RemoveFavoriteLockerAsync(locker.LockerCode);
+            if (success)
+            {
+                favoriteLockerCodes.Remove(locker.LockerCode);
+            }
+        }
+        else
+        {
+            var result = await UserLockerService.AddFavoriteLockerAsync(locker.Id, locker.LockerCode);
+            if (result != null)
+            {
+                favoriteLockerCodes.Add(locker.LockerCode);
+            }
+        }
+        StateHasChanged();
     }
 
     private void SelectLocker(LockerDto locker)

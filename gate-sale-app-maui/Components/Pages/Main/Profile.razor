@@ -10,22 +10,33 @@
     <!-- Header -->
     <div class="header">
         <h1 class="greeting">Hi, @(currentUser?.FirstName ?? "User")! 👋</h1>
-        <p class="school-info">@(currentSchool?.Name ?? "School") • @(currentUser?.Grade ?? "Grade")</p>
+        <p class="school-info">@(currentUser?.SchoolName ?? "School") • Grade @(currentUser?.Grade ?? "")</p>
     </div>
     
     <!-- Parental Consent Alert -->
-    <div class="alert-banner">
-        <div class="alert-icon">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0Z" fill="#EAB308" />
-                <path d="M6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0Z" stroke="#E5E7EB" />
-            </svg>
+    @if ((currentUser?.Grade == "8" || currentUser?.Grade == "9") && !currentUser.ParentalConsentGiven)
+    {
+        <div class="alert-banner">
+            <div class="alert-icon">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0Z" fill="#EAB308" />
+                    <path d="M6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0Z" stroke="#E5E7EB" />
+                </svg>
+            </div>
+            <div class="alert-content">
+                <h3 class="alert-title">Awaiting Parental Consent</h3>
+                <p class="alert-subtitle">Some features are limited until approval</p>
+            </div>
         </div>
-        <div class="alert-content">
-            <h3 class="alert-title">Awaiting Parental Consent</h3>
-            <p class="alert-subtitle">Some features are limited until approval</p>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Loading profile...</p>
         </div>
-    </div>
+    }
 
     <!-- Menu Items -->
     <div class="menu-section">
@@ -95,6 +106,21 @@
             <div class="menu-arrow">›</div>
         </div>
 
+        <div class="menu-item" @onclick="NavigateToMyLockers">
+            <div class="menu-icon blue">
+                <svg width="16" height="19" viewBox="0 0 24 24" fill="none" stroke="#3ABEF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 8V21H3V8" />
+                    <path d="M1 3H23V8H1V3Z" />
+                    <path d="M10 12H14" />
+                </svg>
+            </div>
+            <div class="menu-content">
+                <h3 class="menu-title">My Lockers</h3>
+                <p class="menu-subtitle">Manage favorite & default lockers</p>
+            </div>
+            <div class="menu-arrow">›</div>
+        </div>
+
         <div class="menu-item" @onclick="NavigateToSettings">
             <div class="menu-icon orange">
                 <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -135,7 +161,7 @@
             <div class="menu-arrow">›</div>
         </div>
 
-        <div class="menu-item">
+        <div class="menu-item" @onclick="HandleLogout">
             <div class="menu-icon red">
                 <svg width="18" height="19" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13.2855 3.97305L17.6027 8.29023C17.8559 8.54336 18 8.89141 18 9.25C18 9.60859 17.8559 9.95664 17.6027 10.2098L13.2855 14.527C13.0605 14.752 12.7582 14.875 12.4418 14.875C11.7844 14.875 11.25 14.3406 11.25 13.6832V11.5H6.75C6.12773 11.5 5.625 10.9973 5.625 10.375V8.125C5.625 7.50273 6.12773 7 6.75 7H11.25V4.8168C11.25 4.15937 11.7844 3.625 12.4418 3.625C12.7582 3.625 13.0605 3.75156 13.2855 3.97305ZM5.625 3.625H3.375C2.75273 3.625 2.25 4.12773 2.25 4.75V13.75C2.25 14.3723 2.75273 14.875 3.375 14.875H5.625C6.24727 14.875 6.75 15.3777 6.75 16C6.75 16.6223 6.24727 17.125 5.625 17.125H3.375C1.51172 17.125 0 15.6133 0 13.75V4.75C0 2.88672 1.51172 1.375 3.375 1.375H5.625C6.24727 1.375 6.75 1.87773 6.75 2.5C6.75 3.12227 6.24727 3.625 5.625 3.625Z" fill="#FF5A4A" />
@@ -292,19 +318,82 @@
         flex-shrink: 0;
     }
 
- 
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 12px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 @code {
     private User? currentUser;
     private School? currentSchool;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        // Load current user and school from services
-        currentUser = await UserService.GetCurrentUserAsync();
-        currentSchool = await SchoolService.GetCurrentSchoolAsync();
+        System.Diagnostics.Debug.WriteLine("[Profile] OnInitializedAsync started");
+        try 
+        {
+            isLoading = true;
+            // Load current user from service
+            System.Diagnostics.Debug.WriteLine("[Profile] Calling GetCurrentUserAsync...");
+            currentUser = await UserService.GetCurrentUserAsync();
+            System.Diagnostics.Debug.WriteLine($"[Profile] GetCurrentUserAsync returned: {currentUser != null}");
+            
+            if (currentUser != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Profile] User data: FirstName='{currentUser.FirstName}', SchoolName='{currentUser.SchoolName}', Grade='{currentUser.Grade}'");
+                // Try to load school info
+                currentSchool = await SchoolService.GetSchoolByIdAsync(currentUser.SchoolId);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[Profile] currentUser is NULL!");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Profile] Exception: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            System.Diagnostics.Debug.WriteLine("[Profile] OnInitializedAsync completed");
+        }
     }
 
+    private async Task HandleLogout()
+    {
+        var confirmed = await App.Current.MainPage.DisplayAlert("Logout", "Are you sure you want to logout?", "Yes", "No");
+        if (confirmed)
+        {
+            await UserService.LogoutUserAsync();
+            Navigation.NavigateTo("/login");
+        }
+    }
     
     private void NavigateToMyListings()
     {
@@ -319,6 +408,11 @@
     private void NavigateToMyOrders()
     {
         TransitionService.RequestTransition("/my-orders", GateSale.Services.TransitionType.SlideLeft);
+    }
+
+    private void NavigateToMyLockers()
+    {
+        TransitionService.RequestTransition("/my-lockers", GateSale.Services.TransitionType.SlideLeft);
     }
 
     private void NavigateToSettings()

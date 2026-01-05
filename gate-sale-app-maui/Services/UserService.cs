@@ -17,11 +17,6 @@ namespace GateSale.Services
         public UserService(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("GateSaleAPI");
-            if (!_isInitialized)
-            {
-                InitializeData();
-                _isInitialized = true;
-            }
         }
 
         private void InitializeData()
@@ -128,8 +123,81 @@ namespace GateSale.Services
         // User Management Methods
         public async Task<User?> GetCurrentUserAsync()
         {
-            await Task.Delay(1);
-            return _currentUser;
+            // TEMP: Skip cache to debug
+            // if (_currentUser != null) return _currentUser;
+            System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] Starting fresh fetch (cache disabled for debug)");
+
+            try
+            {
+                var token = await GetAuthTokenAsync();
+                System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] Token exists: {!string.IsNullOrEmpty(token)}");
+                if (string.IsNullOrEmpty(token)) return null;
+
+                var response = await _httpClient.GetAsync("api/User/profile");
+                System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] API Response Status: {response.StatusCode}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] API Response Content: {content}");
+                    
+                    var profile = System.Text.Json.JsonSerializer.Deserialize<UserProfileResponseDto>(content, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] Profile parsed: {profile != null}, FullName: '{profile?.FullName}', Grade: {profile?.Grade}, SchoolName: '{profile?.SchoolName}'");
+                    
+                    if (profile != null)
+                    {
+                        var firstName = !string.IsNullOrEmpty(profile.FullName) && profile.FullName.Contains(' ') ? profile.FullName.Split(' ')[0] : (profile.FullName ?? "");
+                        var lastName = !string.IsNullOrEmpty(profile.FullName) && profile.FullName.Contains(' ') ? profile.FullName.Split(' ')[1] : "";
+
+                        _currentUser = new User
+                        {
+                            Id = profile.Id.ToString(),
+                            FirstName = firstName,
+                            LastName = lastName,
+                            Email = profile.Email ?? "",
+                            PhoneNumber = profile.PhoneNumber ?? "",
+                            Grade = profile.Grade.ToString(),
+                            SchoolName = profile.SchoolName ?? "",
+                            ProfileImageUrl = profile.ProfileImageUrl ?? "",
+                            IsVerified = profile.IsEmailVerified,
+                            IsMinor = profile.IsMinor,
+                            ParentalConsentGiven = profile.ParentalConsentGiven
+                        };
+                        System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] User created: FirstName='{_currentUser.FirstName}', SchoolName='{_currentUser.SchoolName}', Grade='{_currentUser.Grade}'");
+                        return _currentUser;
+                    }
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    System.Diagnostics.Debug.WriteLine("[GetCurrentUserAsync] Unauthorized - logging out");
+                    await LogoutUserAsync();
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] API Error: {response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetCurrentUserAsync] Exception: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        private class UserProfileResponseDto
+        {
+            public Guid Id { get; set; }
+            public string FullName { get; set; } = "";
+            public string Email { get; set; } = "";
+            public string? PhoneNumber { get; set; }
+            public int Grade { get; set; }
+            public string? ProfileImageUrl { get; set; }
+            public bool IsEmailVerified { get; set; }
+            public bool IsMinor { get; set; }
+            public bool ParentalConsentGiven { get; set; }
+            public string? SchoolName { get; set; }
         }
 
         public async Task<User?> GetUserByIdAsync(string userId)

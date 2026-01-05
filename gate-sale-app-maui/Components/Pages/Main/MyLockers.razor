@@ -1,0 +1,463 @@
+@page "/my-lockers"
+@inject IUserLockerService UserLockerService
+@inject ILockerService LockerService
+@inject GateSale.Services.PageTransitionService TransitionService
+@inject NavigationManager Navigation
+@using GateSale.Models
+@using GateSale.Services.Interfaces
+@using System.Collections.Generic
+@using System.Linq
+
+<div class="my-lockers-container">
+    <!-- Header -->
+    <div class="header">
+        <button class="back-button" @onclick="GoBack">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 19L5 12L12 5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <h1 class="page-title">My Lockers</h1>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-bar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" placeholder="Search for a locker..." @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearch" />
+            </div>
+        </div>
+
+        @if (isSearching)
+        {
+            <div class="loading-state">
+                <div class="spinner-small"></div>
+                <p>Searching lockers...</p>
+            </div>
+        }
+        else if (searchResults.Any())
+        {
+            <div class="section">
+                <h2 class="section-title">Search Results</h2>
+                <div class="lockers-list">
+                    @foreach (var locker in searchResults)
+                    {
+                        var isFavorite = favoriteLockers.Any(f => f.Locker.LockerCode == locker.LockerCode);
+                        <div class="locker-item">
+                            <div class="locker-info">
+                                <span class="locker-name">@locker.Location</span>
+                                <span class="locker-code">Code: @locker.LockerCode</span>
+                            </div>
+                            <button class="favorite-btn @(isFavorite ? "active" : "")" @onclick="() => ToggleFavorite(locker)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="@(isFavorite ? "#FFD700" : "none")" stroke="@(isFavorite ? "#FFD700" : "#9CA3AF")" stroke-width="2">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Favorites Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Favorite Lockers</h2>
+                <span class="count-badge">@favoriteLockers.Count</span>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="loading-state">
+                    <div class="spinner-small"></div>
+                </div>
+            }
+            else if (!favoriteLockers.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">⭐</div>
+                    <p>You haven't added any favorite lockers yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="lockers-list">
+                    @foreach (var fav in favoriteLockers)
+                    {
+                        <div class="locker-item @(fav.IsDefault ? "default" : "")">
+                            <div class="locker-info">
+                                <div class="locker-name-row">
+                                    <span class="locker-name">@fav.Locker.Location</span>
+                                    @if (fav.IsDefault)
+                                    {
+                                        <span class="default-tag">Default</span>
+                                    }
+                                </div>
+                                <span class="locker-code">Code: @fav.Locker.LockerCode</span>
+                            </div>
+                            <div class="locker-actions">
+                                @if (!fav.IsDefault)
+                                {
+                                    <button class="action-btn" @onclick="() => SetDefault(fav.Locker)">Set Default</button>
+                                }
+                                <button class="remove-btn" @onclick="() => RemoveFavorite(fav.Locker.LockerCode)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
+                                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .my-lockers-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #F9FAFB;
+        max-width: 375px;
+        margin: 0 auto;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: white;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .back-button {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .header-spacer {
+        width: 40px;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .search-section {
+        margin-bottom: 24px;
+    }
+
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background-color: white;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .search-bar input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-size: 14px;
+        background: transparent;
+    }
+
+    .section {
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+        color: #111827;
+    }
+
+    .count-badge {
+        background-color: #E5E7EB;
+        color: #4B5563;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    .lockers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .locker-item {
+        background-color: white;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .locker-item.default {
+        border-color: #3ABEF9;
+        background-color: #F0F9FF;
+    }
+
+    .locker-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .locker-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .locker-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .default-tag {
+        background-color: #3ABEF9;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .locker-code {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    .locker-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .action-btn {
+        background: none;
+        border: 1px solid #3ABEF9;
+        color: #3ABEF9;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+    }
+
+    .favorite-btn {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+        color: #6B7280;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+        background-color: white;
+        border-radius: 12px;
+        border: 1px dashed #D1D5DB;
+    }
+
+    .empty-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .spinner-small {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #F3F4F6;
+        border-top: 2px solid #3ABEF9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 8px;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private List<UserLockerDto> favoriteLockers = new List<UserLockerDto>();
+    private List<LockerDto> searchResults = new List<LockerDto>();
+    private string searchQuery = string.Empty;
+    private bool isLoading = true;
+    private bool isSearching = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavorites();
+    }
+
+    private async Task LoadFavorites()
+    {
+        try
+        {
+            isLoading = true;
+            var favorites = await UserLockerService.GetFavoriteLockersAsync();
+            favoriteLockers = favorites.ToList();
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading favorites: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            searchResults.Clear();
+            return;
+        }
+
+        if (searchQuery.Length < 3) return;
+
+        try
+        {
+            isSearching = true;
+            
+            double latitude = -33.9249; // Default Cape Town
+            double longitude = 18.4241;
+
+            try
+            {
+                var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10));
+                var location = await Geolocation.Default.GetLocationAsync(request);
+
+                if (location != null)
+                {
+                    latitude = location.Latitude;
+                    longitude = location.Longitude;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting GPS location: {ex.Message}. Using default coordinates.");
+            }
+
+            // Search for lockers near the user's location
+            var lockers = await LockerService.GetNearbyLockersAsync(latitude, longitude, 50);
+            searchResults = lockers.Where(l => 
+                l.Location.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                l.LockerCode.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+            isSearching = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching lockers: {ex.Message}");
+            isSearching = false;
+        }
+    }
+
+    private async Task ToggleFavorite(LockerDto locker)
+    {
+        var existing = favoriteLockers.FirstOrDefault(f => f.Locker.LockerCode == locker.LockerCode);
+        if (existing != null)
+        {
+            await RemoveFavorite(locker.LockerCode);
+        }
+        else
+        {
+            var result = await UserLockerService.AddFavoriteLockerAsync(locker.Id, locker.LockerCode);
+            if (result != null)
+            {
+                await LoadFavorites();
+            }
+        }
+    }
+
+    private async Task RemoveFavorite(string lockerCode)
+    {
+        var success = await UserLockerService.RemoveFavoriteLockerAsync(lockerCode);
+        if (success)
+        {
+            await LoadFavorites();
+        }
+    }
+
+    private async Task SetDefault(LockerDto locker)
+    {
+        var result = await UserLockerService.SetDefaultLockerAsync(locker.Id, locker.LockerCode);
+        if (result != null)
+        {
+            await LoadFavorites();
+        }
+    }
+
+    private void GoBack()
+    {
+        TransitionService.RequestTransition("/profile", GateSale.Services.TransitionType.SlideRight);
+    }
+}

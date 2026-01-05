@@ -7,7 +7,7 @@ namespace GateSale
     public static class MauiProgram
     {
         // Base API URL - change this to your actual backend IP
-        public static readonly string ApiBaseUrl = "https://alex-feed-realtors-impossible.trycloudflare.com/";
+        public static readonly string ApiBaseUrl = "https://contractor-min-gene-pdas.trycloudflare.com/";
 
         public static MauiApp CreateMauiApp()
         {
@@ -30,6 +30,7 @@ namespace GateSale
                 client.Timeout = TimeSpan.FromSeconds(120);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
+            .AddHttpMessageHandler<AuthHeaderHandler>()
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
 #if ANDROID
@@ -47,6 +48,9 @@ namespace GateSale
 #endif
             });
 
+            // Register AuthHeaderHandler
+            builder.Services.AddTransient<AuthHeaderHandler>();
+
             // Also register IHttpClientFactory explicitly
             builder.Services.AddScoped<HttpClient>(sp =>
             {
@@ -62,6 +66,7 @@ namespace GateSale
             builder.Services.AddSingleton<IDisputeService, DisputeService>();
             builder.Services.AddSingleton<IOrderService, OrderService>();
             builder.Services.AddSingleton<ILockerService, LockerService>();
+            builder.Services.AddSingleton<IUserLockerService, UserLockerService>();
             builder.Services.AddSingleton<IPaymentService, PaymentService>();
             builder.Services.AddSingleton<IOrderTrackingService, OrderTrackingService>();
             builder.Services.AddSingleton<IPudoSimulationService, PudoSimulationService>();
@@ -81,3 +86,28 @@ namespace GateSale
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

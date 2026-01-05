@@ -12,33 +12,20 @@ namespace GateSale.Services
     public class OrderService : IOrderService
     {
         private readonly HttpClient _httpClient;
-        private readonly IUserService _userService;
         private readonly ILogger<OrderService> _logger;
 
         public OrderService(
             HttpClient httpClient,
-            IUserService userService,
             ILogger<OrderService> logger)
         {
             _httpClient = httpClient;
-            _userService = userService;
             _logger = logger;
-        }
-
-        private async Task SetAuthHeader()
-        {
-            var token = await _userService.GetAuthTokenAsync();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            }
         }
 
         public async Task<OrderSummaryDto?> CreateOrderAsync(CreateOrderRequest request)
         {
             try
             {
-                await SetAuthHeader();
                 var response = await _httpClient.PostAsJsonAsync("api/Order", request);
                 
                 if (response.IsSuccessStatusCode)
@@ -71,7 +58,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 return await _httpClient.GetFromJsonAsync<OrderDetailDto>($"api/Order/{orderId}");
             }
             catch (Exception ex)
@@ -85,7 +71,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var orders = await _httpClient.GetFromJsonAsync<List<OrderSummaryDto>>("api/Order/buyer");
                 return orders ?? new List<OrderSummaryDto>();
             }
@@ -100,7 +85,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var orders = await _httpClient.GetFromJsonAsync<List<OrderSummaryDto>>("api/Order/seller");
                 return orders ?? new List<OrderSummaryDto>();
             }
@@ -115,7 +99,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var response = await _httpClient.PostAsJsonAsync($"api/Order/{orderId}/status", new UpdateOrderStatusRequest
                 {
                     Status = status,
@@ -134,7 +117,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var response = await _httpClient.PostAsJsonAsync($"api/Order/{orderId}/shipment", new ProcessShipmentRequest
                 {
                     PudoTrackingNumber = trackingNumber,
@@ -153,7 +135,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var response = await _httpClient.PostAsync($"api/Order/{orderId}/approve", null);
                 return response.IsSuccessStatusCode;
             }
@@ -168,7 +149,6 @@ namespace GateSale.Services
         {
             try
             {
-                await SetAuthHeader();
                 var response = await _httpClient.PostAsJsonAsync($"api/Order/{orderId}/cancel", new CancelOrderRequest
                 {
                     Reason = reason,

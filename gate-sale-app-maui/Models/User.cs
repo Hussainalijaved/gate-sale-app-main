@@ -8,10 +8,13 @@ namespace GateSale.Models
         public string Email { get; set; } = "";
         public string PhoneNumber { get; set; } = "";
         public string SchoolId { get; set; } = "";
+        public string SchoolName { get; set; } = "";
         public string Grade { get; set; } = "";
         public DateTime DateOfBirth { get; set; } = DateTime.Now.AddYears(-15);
         public string ProfileImageUrl { get; set; } = "";
         public bool IsVerified { get; set; } = false;
+        public bool IsMinor { get; set; } = false;
+        public bool ParentalConsentGiven { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;

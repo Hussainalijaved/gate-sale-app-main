@@ -112,8 +112,6 @@ namespace GateSale.Services
                     return new List<Product>();
                 }
 
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
                 var response = await _httpClient.GetFromJsonAsync<ProductListApiDto>("api/Product/my");
                 if (response?.Products == null) return new List<Product>();
 
@@ -152,10 +150,6 @@ namespace GateSale.Services
                 }
 
                 var token = await _userService.GetAuthTokenAsync();
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                }
 
                 var response = await _httpClient.PostAsync("api/Product", content);
                 if (response.IsSuccessStatusCode)
@@ -217,10 +211,6 @@ namespace GateSale.Services
             {
                 // Add auth token
                 var token = await _userService.GetAuthTokenAsync();
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                }
 
                 // Create update DTO matching backend expectations
                 var updateDto = new
@@ -255,10 +245,6 @@ namespace GateSale.Services
             {
                 // Add auth token
                 var token = await _userService.GetAuthTokenAsync();
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                }
 
                 var response = await _httpClient.DeleteAsync($"api/Product/{id}");
                 

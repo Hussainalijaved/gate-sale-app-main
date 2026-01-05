@@ -32,6 +32,41 @@ namespace GateSale.API.Controllers
             _context = context;
             _logger = logger;
         }
+        private async Task<Guid> GetResolvedUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+
+            // 1. Try to look up by CognitoUserId (most reliable for Cognito tokens)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.CognitoUserId == userIdClaim);
+            
+            // 2. If not found, try to parse as Guid and look up by Id
+            if (user == null && Guid.TryParse(userIdClaim, out var guidId))
+            {
+                user = await _context.Users.FindAsync(guidId);
+            }
+
+            // 3. If still not found, try to look up by Email
+            if (user == null)
+            {
+                var email = User.FindFirstValue(ClaimTypes.Email);
+                if (!string.IsNullOrEmpty(email))
+                {
+                    user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                }
+            }
+            
+            if (user == null)
+            {
+                _logger.LogWarning("User not found in database for claim: {UserIdClaim}", userIdClaim);
+                throw new UnauthorizedAccessException("User not found in system");
+            }
+
+            return user.Id;
+        }
 
         [HttpPost]
         [Authorize]
@@ -48,46 +83,13 @@ namespace GateSale.API.Controllers
                     _logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
                 }
                 
-                // Get user ID from token
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    _logger.LogWarning("Missing user ID in token. Token may be invalid or expired.");
-                    return Unauthorized("Invalid or expired token. Please re-authenticate.");
-                }
-
-                // Log user ID for debugging
-                _logger.LogInformation("Attempting to create product for user ID: {UserId}", userIdClaim);
-                
-                // Try to parse user ID
-                if (!Guid.TryParse(userIdClaim, out Guid userId))
-                {
-                    _logger.LogWarning("Invalid user ID format in token: {UserIdClaim}", userIdClaim);
-                    return BadRequest("Invalid user ID format");
-                }
-
-                // Check if user exists in database
+                // Get resolved user ID
+                var userId = await GetResolvedUserId();
                 var user = await _context.Users.FindAsync(userId);
+                
                 if (user == null)
                 {
-                    // Check if user exists by email
-                    var email = User.FindFirstValue(ClaimTypes.Email);
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-                        if (user != null)
-                        {
-                            // Found user by email, use this ID instead
-                            userId = user.Id;
-                            _logger.LogInformation("Found user by email: {Email}, ID: {UserId}", email, userId);
-                        }
-                    }
-                    
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User not found in database. ID: {UserId}", userId);
-                        return Unauthorized("User not found in system. Please complete your profile first.");
-                    }
+                    return Unauthorized("User not found in system");
                 }
 
                 // Check if email is verified
@@ -177,50 +179,10 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                // Get user ID from token
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    _logger.LogWarning("Missing user ID in token when retrieving products");
-                    return Unauthorized("Invalid user token");
-                }
+                // Get resolved user ID
+                var userId = await GetResolvedUserId();
 
-                // Log user ID for debugging
-                _logger.LogInformation("Retrieving products for user ID: {UserId}", userIdClaim);
-                
-                Guid userId;
-                // Try to parse user ID
-                if (!Guid.TryParse(userIdClaim, out userId))
-                {
-                    _logger.LogWarning("Invalid user ID format in token: {UserIdClaim}", userIdClaim);
-                    return BadRequest("Invalid user ID format");
-                }
-
-                // Check if user exists in database
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null)
-                {
-                    // Check if user exists by email
-                    var email = User.FindFirstValue(ClaimTypes.Email);
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-                        if (user != null)
-                        {
-                            // Found user by email, use this ID instead
-                            userId = user.Id;
-                            _logger.LogInformation("Found user by email when retrieving products: {Email}, ID: {UserId}", email, userId);
-                        }
-                    }
-                    
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User not found in database when retrieving products. ID: {UserId}", userId);
-                        return Unauthorized("User not found in system. Please complete your profile first.");
-                    }
-                }
-
-                var products = await _productService.GetProductsBySeller(user.Id, filter);
+                var products = await _productService.GetProductsBySeller(userId, filter);
                 return Ok(products);
             }
             catch (Exception ex)
@@ -256,23 +218,8 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                // Get user ID from token
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    _logger.LogWarning("Missing user ID in token when updating product");
-                    return Unauthorized("Invalid user token");
-                }
-
-                // Log IDs for debugging
-                _logger.LogInformation("Attempting to update product {ProductId} by user {UserId}", id, userIdClaim);
-                
-                // Try to parse user ID
-                if (!Guid.TryParse(userIdClaim, out Guid userId))
-                {
-                    _logger.LogWarning("Invalid user ID format in token: {UserIdClaim}", userIdClaim);
-                    return BadRequest("Invalid user ID format");
-                }
+                // Get resolved user ID
+                var userId = await GetResolvedUserId();
 
                 // First check if product exists
                 var product = await _context.Products.FindAsync(id);
@@ -282,39 +229,15 @@ namespace GateSale.API.Controllers
                     return NotFound($"Product with ID {id} not found");
                 }
 
-                // Check if user exists in database
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null)
-                {
-                    // Check if user exists by email
-                    var email = User.FindFirstValue(ClaimTypes.Email);
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-                        if (user != null)
-                        {
-                            // Found user by email, use this ID instead
-                            userId = user.Id;
-                            _logger.LogInformation("Found user by email when updating product: {Email}, ID: {UserId}", email, userId);
-                        }
-                    }
-                    
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User not found in database when updating product. ID: {UserId}", userId);
-                        return Unauthorized("User not found in system");
-                    }
-                }
-
                 // Check if user owns the product
-                if (product.SellerId != user.Id)
+                if (product.SellerId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to update product {ProductId} owned by {OwnerId}", 
-                        user.Id, id, product.SellerId);
+                        userId, id, product.SellerId);
                     return Forbid("You don't have permission to update this product");
                 }
 
-                var success = await _productService.UpdateProduct(id, productDto, user.Id);
+                var success = await _productService.UpdateProduct(id, productDto, userId);
                 if (!success)
                 {
                     return StatusCode(500, "Failed to update product");
@@ -335,24 +258,6 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                // Get user ID from token
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    _logger.LogWarning("Missing user ID in token when deleting product");
-                    return Unauthorized("Invalid user token");
-                }
-
-                // Log IDs for debugging
-                _logger.LogInformation("Attempting to delete product {ProductId} by user {UserId}", id, userIdClaim);
-                
-                // Try to parse user ID
-                if (!Guid.TryParse(userIdClaim, out Guid userId))
-                {
-                    _logger.LogWarning("Invalid user ID format in token: {UserIdClaim}", userIdClaim);
-                    return BadRequest("Invalid user ID format");
-                }
-
                 // First check if product exists
                 var product = await _context.Products.FindAsync(id);
                 if (product == null)
@@ -361,39 +266,18 @@ namespace GateSale.API.Controllers
                     return NotFound($"Product with ID {id} not found");
                 }
 
-                // Check if user exists in database
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null)
-                {
-                    // Check if user exists by email
-                    var email = User.FindFirstValue(ClaimTypes.Email);
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-                        if (user != null)
-                        {
-                            // Found user by email, use this ID instead
-                            userId = user.Id;
-                            _logger.LogInformation("Found user by email when deleting product: {Email}, ID: {UserId}", email, userId);
-                        }
-                    }
-                    
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User not found in database when deleting product. ID: {UserId}", userId);
-                        return Unauthorized("User not found in system");
-                    }
-                }
+                // Get resolved user ID
+                var userId = await GetResolvedUserId();
 
                 // Check if user owns the product
-                if (product.SellerId != user.Id)
+                if (product.SellerId != userId)
                 {
                     _logger.LogWarning("User {UserId} attempted to delete product {ProductId} owned by {OwnerId}", 
-                        user.Id, id, product.SellerId);
+                        userId, id, product.SellerId);
                     return Forbid("You don't have permission to delete this product");
                 }
 
-                var success = await _productService.DeleteProduct(id, user.Id);
+                var success = await _productService.DeleteProduct(id, userId);
                 if (!success)
                 {
                     return StatusCode(500, "Failed to delete product");
@@ -414,19 +298,9 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId == null)
-                {
-                    return Unauthorized();
-                }
+                var userId = await GetResolvedUserId();
 
-                // Check number of images
-                if (images.Count > 5)
-                {
-                    return BadRequest("Maximum 5 images are allowed");
-                }
-
-                var result = await _productService.AddProductImages(id, images, Guid.Parse(userId));
+                var result = await _productService.AddProductImages(id, images, userId);
                 if (!result)
                 {
                     return NotFound();
@@ -447,13 +321,9 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId == null)
-                {
-                    return Unauthorized();
-                }
+                var userId = await GetResolvedUserId();
 
-                var success = await _productService.DeleteProductImage(imageId, Guid.Parse(userId));
+                var success = await _productService.DeleteProductImage(imageId, userId);
                 if (!success)
                 {
                     return NotFound();

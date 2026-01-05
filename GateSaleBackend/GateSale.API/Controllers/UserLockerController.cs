@@ -2,6 +2,7 @@ using GateSale.Core.Entities;
 using GateSale.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace GateSale.API.Controllers
@@ -12,24 +13,53 @@ namespace GateSale.API.Controllers
     public class UserLockerController : ControllerBase
     {
         private readonly IUserLockerService _userLockerService;
+        private readonly GateSale.Infrastructure.Data.GateSaleDbContext _context;
         private readonly ILogger<UserLockerController> _logger;
 
         public UserLockerController(
             IUserLockerService userLockerService,
+            GateSale.Infrastructure.Data.GateSaleDbContext context,
             ILogger<UserLockerController> logger)
         {
             _userLockerService = userLockerService;
+            _context = context;
             _logger = logger;
         }
 
-        private Guid GetCurrentUserId()
+        private async Task<Guid> GetResolvedUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            if (string.IsNullOrEmpty(userIdClaim))
             {
                 throw new UnauthorizedAccessException("User ID not found in token");
             }
-            return userId;
+
+            // 1. Try to look up by CognitoUserId (most reliable for Cognito tokens)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.CognitoUserId == userIdClaim);
+            
+            // 2. If not found, try to parse as Guid and look up by Id
+            if (user == null && Guid.TryParse(userIdClaim, out var guidId))
+            {
+                user = await _context.Users.FindAsync(guidId);
+            }
+
+            // 3. If still not found, try to look up by Email
+            if (user == null)
+            {
+                var email = User.FindFirstValue(ClaimTypes.Email);
+                if (!string.IsNullOrEmpty(email))
+                {
+                    user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                }
+            }
+            
+            if (user == null)
+            {
+                _logger.LogWarning("User not found in database for claim: {UserIdClaim}", userIdClaim);
+                throw new UnauthorizedAccessException("User not found in system");
+            }
+
+            return user.Id;
         }
 
         [HttpGet("favorites")]
@@ -37,7 +67,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = await GetResolvedUserId();
                 var lockers = await _userLockerService.GetUserFavoriteLockers(userId);
                 return Ok(lockers);
             }
@@ -53,7 +83,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = await GetResolvedUserId();
                 var locker = await _userLockerService.GetUserDefaultLocker(userId);
                 
                 if (locker == null)
@@ -75,7 +105,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var sellerId = GetCurrentUserId();
+                var sellerId = await GetResolvedUserId();
                 var lockers = await _userLockerService.GetSellerDropoffLockers(sellerId);
                 return Ok(lockers);
             }
@@ -91,7 +121,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = await GetResolvedUserId();
                 UserLocker userLocker;
                 
                 if (!string.IsNullOrEmpty(request.LockerCode))
@@ -121,7 +151,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = await GetResolvedUserId();
                 var result = await _userLockerService.RemoveFavoriteLockerByCode(userId, lockerCode);
                 
                 if (!result)
@@ -143,7 +173,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = await GetResolvedUserId();
                 UserLocker userLocker;
                 
                 if (!string.IsNullOrEmpty(request.LockerCode))
@@ -173,7 +203,7 @@ namespace GateSale.API.Controllers
         {
             try
             {
-                var sellerId = GetCurrentUserId();
+                var sellerId = await GetResolvedUserId();
                 UserLocker userLocker;
                 
                 if (!string.IsNullOrEmpty(request.LockerCode))
