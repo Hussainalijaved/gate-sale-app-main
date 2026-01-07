@@ -1,0 +1,40 @@
+{
+  "family": "gatesale-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::357278409567:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::357278409567:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "gatesale-api",
+      "image": "357278409567.dkr.ecr.af-south-1.amazonaws.com/gatesale-backend:latest",
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "ASPNETCORE_ENVIRONMENT",
+          "value": "Production"
+        },
+        {
+          "name": "ASPNETCORE_URLS",
+          "value": "http://+:80"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gatesale-backend",
+          "awslogs-region": "af-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

@@ -7,7 +7,7 @@ namespace GateSale
     public static class MauiProgram
     {
         // Base API URL - change this to your actual backend IP
-        public static readonly string ApiBaseUrl = "https://contractor-min-gene-pdas.trycloudflare.com/";
+        public static readonly string ApiBaseUrl = "http://YOUR_ALB_DNS_NAME/";
 
         public static MauiApp CreateMauiApp()
         {
