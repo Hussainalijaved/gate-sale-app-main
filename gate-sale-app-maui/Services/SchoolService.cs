@@ -126,8 +126,23 @@ namespace GateSale.Services
 
         public async Task<School?> GetSchoolByNameAsync(string name)
         {
-            await Task.Delay(1);
-            return _schools.FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/Auth/check-school?name={Uri.EscapeDataString(name)}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<School>();
+                }
+                
+                var error = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"School check failed: {response.StatusCode} - {error}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"School check error: {ex.Message}");
+                return null;
+            }
         }
 
         // School Information Methods

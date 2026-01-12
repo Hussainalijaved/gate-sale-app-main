@@ -27,14 +27,8 @@ namespace GateSale.Services
 
         public string GetProductDetailIdFromTrendingId(string trendingId)
         {
-            // Map trending item IDs to product detail IDs
-            return trendingId switch
-            {
-                "trending1" => "book",        // Calculus AP -> Book details
-                "trending2" => "calculator",  // TI-84 Calculator -> Calculator details
-                "trending3" => "headphone",   // Wireless Headphones -> Headphone details
-                          _ => "book" // Default fallback
-            };
+            // With API integration, the trending ID is the actual product ID
+            return trendingId;
         }
 
         // Product Management Methods

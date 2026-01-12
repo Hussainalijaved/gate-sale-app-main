@@ -21,15 +21,13 @@ namespace GateSale.Infrastructure.Services
         {
             _logger = logger;
             
-            _region = configuration["AWS:Region"] ?? "us-east-1";
-            _bucketName = configuration["AWS:S3:BucketName"] ?? "gatesale-media";
+            _region = configuration["AWS:Region"] ?? "af-south-1";
+            _bucketName = configuration["AWS:S3:BucketName"] ?? "gatesale-product-images";
             
-            var credentials = new BasicAWSCredentials(
-                configuration["AWS:AccessKey"],
-                configuration["AWS:SecretKey"]
-            );
-            
-            _s3Client = new AmazonS3Client(credentials, RegionEndpoint.GetBySystemName(_region));
+            // Always use default credential provider chain (Task Role in ECS, AWS CLI credentials locally)
+            // This is the AWS recommended pattern for containerized applications
+            _s3Client = new AmazonS3Client(RegionEndpoint.GetBySystemName(_region));
+            _logger.LogInformation("S3StorageService initialized with default credential provider chain - Bucket: {BucketName}, Region: {Region}", _bucketName, _region);
         }
 
         public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)

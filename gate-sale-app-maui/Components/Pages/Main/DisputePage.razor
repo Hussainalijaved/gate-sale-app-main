@@ -191,17 +191,6 @@
                     </div>
                 }
 
-                <!-- Test Buttons -->
-                <div class="test-actions mt-24">
-                    <p class="test-label">Developer Test Actions:</p>
-                    <div class="test-grid">
-                        @if (dispute.Status == DisputeStatus.Open)
-                        {
-                            <button class="btn-test" @onclick="() => TestReviewDispute(true)">Approve Dispute</button>
-                            <button class="btn-test" @onclick="() => TestReviewDispute(false)">Reject Dispute</button>
-                        }
-                    </div>
-                </div>
             </div>
         }
     </div>
@@ -354,19 +343,6 @@
     .add-photo-btn { aspect-ratio: 1; border: 2px dashed #D1D5DB; border-radius: 8px; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #6B7280; cursor: pointer; transition: all 0.2s; }
     .add-photo-btn:hover { border-color: #3ABEF9; color: #3ABEF9; background-color: #F0F9FF; }
     .add-photo-btn span { font-size: 10px; font-weight: 600; margin-top: 4px; }
-
-    /* Test Styles */
-    .test-actions {
-        padding: 12px;
-        background-color: #F3F4F6;
-        border: 1px dashed #D1D5DB;
-        border-radius: 12px;
-        margin-top: 24px;
-    }
-    .test-label { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 8px; }
-    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-test { background-color: #4B5563; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-test:hover { background-color: #374151; }
 
     @@keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -631,21 +607,6 @@
                 if (success) await LoadData();
                 else errorMessage = "Failed to confirm collection.";
             }
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
-
-    private async Task TestReviewDispute(bool isApproved)
-    {
-        try
-        {
-            isProcessing = true;
-            var success = await DisputeService.ReviewDisputeAsync(dispute!.Id, isApproved, "Test manual review");
-            if (success) await LoadData();
-            else errorMessage = "Failed to review dispute.";
         }
         finally
         {

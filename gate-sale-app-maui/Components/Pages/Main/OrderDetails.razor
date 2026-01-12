@@ -219,29 +219,6 @@
                     }
                 }
 
-                <!-- Test Buttons (Visible for both for testing) -->
-                <div class="test-actions mt-24">
-                    <p class="test-label">Developer Test Actions:</p>
-                    <div class="test-grid">
-                        <button class="btn-test" @onclick="() => TestUpdateStatus(OrderStatus.Delivered)">Set Delivered</button>
-                        <button class="btn-test" @onclick="() => TestUpdateStatus(OrderStatus.Collected)">Set Collected</button>
-                    </div>
-                </div>
-
-                <!-- Simulation Actions (Testing Only) -->
-                <div class="section-card simulation-section mt-24">
-                    <h3 class="section-title">Pudo Simulation (Testing)</h3>
-                    <div class="simulation-actions">
-                        <button class="btn-outline full-width" @onclick="SimulatePudoDrop" disabled="@isProcessing">
-                            @if (isProcessing) { <span class="spinner-small"></span> }
-                            Simulate Pudo Drop (Delivered)
-                        </button>
-                        <button class="btn-outline full-width mt-12" @onclick="SimulatePudoPickup" disabled="@isProcessing">
-                            @if (isProcessing) { <span class="spinner-small"></span> }
-                            Simulate Pudo Pickup (Collected)
-                        </button>
-                    </div>
-                </div>
             </div>
         }
     </div>
@@ -287,8 +264,10 @@
     }
 </div>
 
-<style>
-    .order-details-container {
+
+
+    <style > 
+        .order-details-container {
         display: flex;
         flex-direction: column;
         min-height: 100vh;
@@ -317,9 +296,9 @@
         transition: background-color 0.2s ease;
     }
 
-    .back-button:hover {
-        background-color: #F3F4F6;
-    }
+        .back-button:hover {
+            background-color: #F3F4F6;
+        }
 
     .page-title {
         font-size: 18px;
@@ -347,11 +326,30 @@
         align-items: center;
     }
 
-    .status-banner.pending { background-color: #FEF3C7; color: #92400E; }
-    .status-banner.transit { background-color: #DBEAFE; color: #1E40AF; }
-    .status-banner.delivered { background-color: #D1FAE5; color: #065F46; }
-    .status-banner.cancelled { background-color: #FEE2E2; color: #991B1B; }
-    .status-banner.dispute { background-color: #FEE2E2; color: #991B1B; }
+        .status-banner.pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-banner.transit {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .status-banner.delivered {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-banner.cancelled {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .status-banner.dispute {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
 
     .status-icon {
         width: 40px;
@@ -405,11 +403,11 @@
         background-color: #F3F4F6;
     }
 
-    .product-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .product-details {
         flex: 1;
@@ -451,10 +449,10 @@
         font-weight: 500;
     }
 
-    .info-value.highlight {
-        color: #3ABEF9;
-        font-weight: 700;
-    }
+        .info-value.highlight {
+            color: #3ABEF9;
+            font-weight: 700;
+        }
 
     .locker-details {
         display: flex;
@@ -517,22 +515,22 @@
         color: #4B5563;
     }
 
-    .summary-row.fee {
-        color: #DC2626;
-    }
+        .summary-row.fee {
+            color: #DC2626;
+        }
 
-    .summary-row.total {
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #F3F4F6;
-        font-weight: 700;
-        font-size: 16px;
-        color: #111827;
-    }
+        .summary-row.total {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #F3F4F6;
+            font-weight: 700;
+            font-size: 16px;
+            color: #111827;
+        }
 
-    .summary-row.payout {
-        color: #059669;
-    }
+        .summary-row.payout {
+            color: #059669;
+        }
 
     .actions-container {
         margin-top: 8px;
@@ -583,23 +581,26 @@
         cursor: pointer;
     }
 
-    .full-width { width: 100%; }
-    .mt-12 { margin-top: 12px; }
-    .mt-24 { margin-top: 24px; }
-
-    /* Test Styles */
-    .test-actions {
-        padding: 12px;
-        background-color: #F3F4F6;
-        border: 1px dashed #D1D5DB;
-        border-radius: 12px;
+    .full-width {
+        width: 100%;
     }
-    .test-label { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase; margin-bottom: 8px; }
-    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-test { background-color: #4B5563; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-test:hover { background-color: #374151; }
 
-    /* Modal Styles */
+    .mt-12 {
+        margin-top: 12px;
+    }
+
+    .mt-24 {
+        margin-top: 24px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+
+   
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -699,7 +700,7 @@
         animation: spin 1s linear infinite;
         margin-bottom: 16px;
     }
-    /* Tracking Timeline Styles */
+    
     .tracking-timeline {
         display: flex;
         flex-direction: column;
@@ -780,18 +781,7 @@
         text-align: center;
         padding: 20px 0;
     }
-
-    .simulation-section {
-        border: 1px dashed #3ABEF9;
-        background-color: #F0F9FF;
-    }
-
-    .simulation-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-</style>
+    </style>
 
 @code {
     [Parameter] public string OrderId { get; set; } = string.Empty;
@@ -1045,58 +1035,7 @@
         TransitionService.RequestTransition($"/dispute/{OrderId}", GateSale.Services.TransitionType.SlideLeft);
     }
 
-    private async Task TestUpdateStatus(OrderStatus status)
-    {
-        try
-        {
-            isProcessing = true;
-            if (Guid.TryParse(OrderId, out var guid))
-            {
-                var success = await OrderService.UpdateOrderStatusAsync(guid, status, "Test manual status update");
-                if (success) await LoadOrderDetails();
-            }
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
 
-    private async Task SimulatePudoDrop()
-    {
-        if (order == null) return;
-        try
-        {
-            isProcessing = true;
-            var success = await PudoSimulationService.SimulatePackageDroppedAsync(order.Id, order.BuyerLocker?.LockerCode ?? "MOCK001");
-            if (success)
-            {
-                await LoadOrderDetails();
-            }
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
-
-    private async Task SimulatePudoPickup()
-    {
-        if (order == null) return;
-        try
-        {
-            isProcessing = true;
-            var success = await PudoSimulationService.SimulatePackagePickedUpAsync(order.Id, order.BuyerLocker?.LockerCode ?? "MOCK001");
-            if (success)
-            {
-                await LoadOrderDetails();
-            }
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
 
     private void GoBack()
     {

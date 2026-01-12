@@ -18,17 +18,20 @@ namespace GateSale.API.Controllers
         private readonly GateSaleDbContext _dbContext;
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
+        private readonly IStorageService _storageService;
         private readonly ILogger<DisputeController> _logger;
 
         public DisputeController(
             GateSaleDbContext dbContext,
             IOrderService orderService,
             IPaymentService paymentService,
+            IStorageService storageService,
             ILogger<DisputeController> logger)
         {
             _dbContext = dbContext;
             _orderService = orderService;
             _paymentService = paymentService;
+            _storageService = storageService;
             _logger = logger;
         }
 
@@ -232,11 +235,14 @@ namespace GateSale.API.Controllers
                 // Process file upload
                 if (request.File != null && request.File.Length > 0)
                 {
-                    // In a real implementation, you would upload to S3 or another storage service
-                    // For this example, we'll just store the file name
+                    _logger.LogInformation("Uploading evidence for dispute {DisputeId}: {FileName}", disputeId, request.File.FileName);
                     
                     var fileName = $"{Guid.NewGuid()}_{request.File.FileName}";
-                    var fileUrl = $"https://storage.example.com/dispute-evidence/{fileName}";
+                    
+                    using var stream = request.File.OpenReadStream();
+                    var fileUrl = await _storageService.UploadFileAsync(stream, fileName, request.File.ContentType);
+                    
+                    _logger.LogInformation("Evidence uploaded successfully. URL: {FileUrl}", fileUrl);
                     
                     // Create evidence record
                     var evidence = new DisputeEvidence

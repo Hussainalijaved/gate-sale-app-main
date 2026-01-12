@@ -151,7 +151,7 @@
                             }
                             <p class="feed-desc">@listing.Details</p>
                             <div class="feed-actions">
-                                <button class="feed-btn primary" @onclick="View">
+                                <button class="feed-btn primary" @onclick="() => NavigateToProductDetails(listing.Id)">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                         <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
                                         <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
@@ -1114,31 +1114,16 @@
         await FilterItems();
     }
 
-    private void NavigateToProductDetails(string trendingId)
+    private void NavigateToProductDetails(string productId)
     {
-        // For user-created products, the trending ID is the same as product detail ID
-        // For original products, we need to map them
-        string productDetailId;
-
-        if (trendingId.StartsWith("user_product_"))
-        {
-            // User-created product - use the ID directly
-            productDetailId = trendingId;
-        }
-        else
-        {
-            // Original product - use mapping
-            productDetailId = ProductService.GetProductDetailIdFromTrendingId(trendingId);
-        }
-
         // Navigate to PageDetails with the product ID
-        TransitionService.RequestTransition($"/pagedetails/{productDetailId}", GateSale.Services.TransitionType.SlideLeft);
+        TransitionService.RequestTransition($"/pagedetails/{productId}", GateSale.Services.TransitionType.SlideLeft);
     }
 
-    private void NavigateToCategory(string category)
+    private async Task NavigateToCategory(string category)
     {
-        // Navigate to shop page with category filter
-        TransitionService.RequestTransition($"/shop?category={category}", GateSale.Services.TransitionType.SlideLeft);
+        // Filter locally on the marketplace page
+        await SetActiveTab(category);
     }
 
 
@@ -1208,7 +1193,7 @@
             MinPrice = minPrice,
             MaxPrice = maxPrice,
             SearchTerm = searchQuery,
-            Category = activeTab == "Recents" ? null : activeTab,
+            Category = string.IsNullOrEmpty(activeTab) ? null : activeTab,
             Conditions = new List<string>(),
             Grades = new List<string>()
         };
@@ -1224,6 +1209,18 @@
         if (filterGrade12) filter.Grades.Add("Grade 12");
 
         filteredTrendingItems = await ProductService.GetFilteredTrendingItemsAsync(filter);
+        
+        // Also filter recent listings if a category is selected
+        var allRecent = await ProductService.GetRecentListingsAsync();
+        if (!string.IsNullOrEmpty(activeTab))
+        {
+            recentListings = allRecent.Where(r => r.Category.Equals(activeTab, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        else
+        {
+            recentListings = allRecent;
+        }
+
         StateHasChanged();
     }
 
@@ -1298,10 +1295,6 @@
     }
 
     private void SeeAllCategories()
-    {
-        TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
-    }
-    private void View()
     {
         TransitionService.RequestTransition("/shop", GateSale.Services.TransitionType.SlideLeft);
     }

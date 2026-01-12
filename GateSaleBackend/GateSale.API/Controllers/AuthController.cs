@@ -1111,6 +1111,60 @@ namespace GateSale.API.Controllers
         }
     
     
+        [HttpGet("check-school")]
+        public async Task<IActionResult> CheckSchool([FromQuery] string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest(new { message = "School name is required." });
+            }
+
+            try
+            {
+                var schoolName = name.Trim().ToLower();
+                
+                // 1. Check if school is already whitelisted
+                var school = await _dbContext.WhitelistedDomains
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.SchoolName.ToLower() == schoolName && w.IsActive);
+
+                if (school != null)
+                {
+                    return Ok(new
+                    {
+                        Id = school.Id.ToString(),
+                        Name = school.SchoolName,
+                        IsVerified = school.IsActive,
+                        IsActive = true
+                    });
+                }
+
+                // 2. Check if there's a pending request for this school
+                var pendingRequest = await _dbContext.SchoolRequests
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.SchoolName.ToLower() == schoolName);
+
+                if (pendingRequest != null)
+                {
+                    return Ok(new
+                    {
+                        Id = "pending-" + pendingRequest.Id.ToString(),
+                        Name = pendingRequest.SchoolName,
+                        IsVerified = false,
+                        IsActive = true,
+                        IsPending = true
+                    });
+                }
+
+                return NotFound(new { message = "School not found." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking school: {Name}", name);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while checking the school." });
+            }
+        }
+
         [HttpPost("request-school")]
         public async Task<IActionResult> RequestSchool([FromBody] SchoolRequestDto model)
         {

@@ -11,6 +11,7 @@ namespace GateSale.Models
         public string LogoUrl { get; set; } = "";
         public bool IsVerified { get; set; } = false;
         public bool IsActive { get; set; } = true;
+        public bool IsPending { get; set; } = false;
         public int ActiveStudentCount { get; set; } = 0;
         public List<string> Buildings { get; set; } = new();
         public List<Grade> SupportedGrades { get; set; } = new();

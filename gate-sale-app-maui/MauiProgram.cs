@@ -7,7 +7,7 @@ namespace GateSale
     public static class MauiProgram
     {
         // Base API URL - change this to your actual backend IP
-        public static readonly string ApiBaseUrl = "http://YOUR_ALB_DNS_NAME/";
+        public static readonly string ApiBaseUrl = "http://gatesale-lb-516062414.af-south-1.elb.amazonaws.com/";
 
         public static MauiApp CreateMauiApp()
         {

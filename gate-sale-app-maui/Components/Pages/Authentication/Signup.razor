@@ -48,8 +48,28 @@
                 <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z" fill="#9CA3AF"/>
                 </svg>
-                <input type="text" class="form-input with-icon" placeholder="Enter your school name" @bind="school" />
+                <input type="text" class="form-input with-icon" placeholder="Enter your school name" 
+                       value="@school" @oninput="OnSchoolInput" />
             </div>
+            @if (isCheckingSchool)
+            {
+                <p class="input-info">Checking school support...</p>
+            }
+            else if (isSchoolFound)
+            {
+                @if (isSchoolPending)
+                {
+                    <p class="input-info">This school is being reviewed. You can still register!</p>
+                }
+                else
+                {
+                    <p class="input-success">School already supported!</p>
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(school) && school.Length >= 3)
+            {
+                <p class="input-warning">School not found. You'll be asked to add it.</p>
+            }
         </div>
 
         <!-- Date of Birth Field -->
@@ -474,6 +494,30 @@
         text-align: center;
         margin-top: -10px;
     }
+
+    .input-info {
+        color: #3B82F6;
+        font-size: 13px;
+        margin-top: 4px;
+        margin-left: 4px;
+        font-weight: 600;
+    }
+
+    .input-warning {
+        color: #F59E0B;
+        font-size: 13px;
+        margin-top: 4px;
+        margin-left: 4px;
+        font-weight: 600;
+    }
+
+    .input-success {
+        color: #10B981;
+        font-size: 13px;
+        margin-top: 4px;
+        margin-left: 4px;
+        font-weight: 600;
+    }
 </style>
 
 @code {
@@ -494,6 +538,10 @@
     private bool showConfirmPassword = false;
     private bool isProcessing = false;
     private string errorMessage = "";
+    private bool isSchoolFound = false;
+    private bool isSchoolPending = false;
+    private bool isCheckingSchool = false;
+    private System.Threading.Timer? schoolCheckTimer;
 
     [Parameter]
     [SupplyParameterFromQuery]
@@ -506,7 +554,52 @@
     protected override void OnInitialized()
     {
         if (!string.IsNullOrEmpty(Email)) email = Email;
-        if (!string.IsNullOrEmpty(SchoolName)) school = SchoolName;
+        if (!string.IsNullOrEmpty(SchoolName)) 
+        {
+            school = SchoolName;
+            _ = CheckSchoolAsync(school);
+        }
+    }
+
+    private void OnSchoolInput(ChangeEventArgs e)
+    {
+        school = e.Value?.ToString() ?? "";
+        isSchoolFound = false;
+
+        schoolCheckTimer?.Dispose();
+        schoolCheckTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await CheckSchoolAsync(school);
+            });
+        }, null, 800, System.Threading.Timeout.Infinite);
+    }
+
+    private async Task CheckSchoolAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length < 3)
+        {
+            isSchoolFound = false;
+            isCheckingSchool = false;
+            StateHasChanged();
+            return;
+        }
+
+        isCheckingSchool = true;
+        StateHasChanged();
+
+        try
+        {
+            var existingSchool = await SchoolService.GetSchoolByNameAsync(name);
+            isSchoolFound = existingSchool != null;
+            isSchoolPending = existingSchool?.IsPending ?? false;
+        }
+        finally
+        {
+            isCheckingSchool = false;
+            StateHasChanged();
+        }
     }
 
     private void TogglePasswordVisibility()
