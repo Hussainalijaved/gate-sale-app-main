@@ -13,6 +13,10 @@ namespace GateSale.Services
             }
 
             return await base.SendAsync(request, cancellationToken);
+
+
+
+
         }
     }
 }
